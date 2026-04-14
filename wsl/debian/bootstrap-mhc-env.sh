@@ -21,6 +21,12 @@ echo "[1/7] Instalando pacotes base..."
 apt-get update
 apt-get -y install ca-certificates curl gnupg lsb-release git jq unzip zip build-essential pkg-config python3 python3-venv python3-pip libpq-dev
 
+if [[ "${INSTALL_LIBVIRT:-0}" == "1" ]]; then
+  echo "[1/7] Instalando KVM/libvirt (opcional)..."
+  apt-get -y install qemu-system libvirt-daemon-system libvirt-clients virtinst qemu-utils
+  systemctl enable --now libvirtd || true
+fi
+
 echo "[2/7] Instalando Docker no Debian WSL..."
 bash "${script_dir}/setup-docker.sh"
 
@@ -41,6 +47,10 @@ fi
 
 if [[ -n "${target_user}" ]] && id -u "${target_user}" >/dev/null 2>&1; then
   usermod -aG docker "${target_user}" || true
+  if [[ "${INSTALL_LIBVIRT:-0}" == "1" ]]; then
+    usermod -aG libvirt "${target_user}" || true
+    usermod -aG kvm "${target_user}" || true
+  fi
 fi
 
 run_as_target_user() {

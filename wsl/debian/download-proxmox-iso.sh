@@ -1,26 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-url="${1:-}"
+default_url="https://enterprise.proxmox.com/iso/proxmox-ve_9.1-1.iso"
+url="${1:-$default_url}"
 out="${2:-$HOME/isos/proxmox.iso}"
 
-if [[ -z "${url}" ]]; then
-  echo "Uso: $0 <URL_DO_ISO_PROXMOX> [caminho_saida]"
-  echo "Exemplo: $0 https://enterprise.proxmox.com/iso/proxmox-ve_9.1-1.iso"
-  exit 2
-fi
+force="${FORCE:-0}"
 
 dir="$(dirname -- "${out}")"
 mkdir -p "${dir}"
 
 tmp="${out}.partial"
-rm -f "${tmp}"
+
+if [[ -f "${out}" && "${force}" != "1" ]]; then
+  echo "ISO já existe em: ${out}"
+  echo "Para baixar novamente, rode com FORCE=1"
+  exit 0
+fi
 
 echo "Baixando ISO..."
 echo "URL: ${url}"
 echo "Destino: ${out}"
 
-curl -fL --retry 5 --retry-delay 2 --connect-timeout 15 -o "${tmp}" "${url}"
+curl -fL -C - --retry 5 --retry-delay 2 --connect-timeout 15 -o "${tmp}" "${url}"
 mv -f "${tmp}" "${out}"
 
 echo "OK"

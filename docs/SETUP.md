@@ -326,8 +326,54 @@ Exemplo de instalação do KVM/libvirt no Debian (WSL):
 
 ```bash
 sudo apt update && sudo apt install qemu-system libvirt-daemon-system libvirt-clients
+sudo apt install -y virtinst
 sudo adduser $USER libvirt
 sudo adduser $USER kvm
 lsmod | grep kvm
 sudo systemctl enable --now libvirtd
 ```
+
+Se o `libvirt-qemu` não conseguir acessar o KVM (erro `failed to initialize kvm`), ajuste permissões de `/dev/kvm`:
+
+```bash
+sudo bash wsl/debian/apply-kvm-permissions.sh
+```
+
+Nota importante:
+
+- Rode comandos Linux dentro do Debian/WSL. Se você rodar no PowerShell do Windows, pode cair no `sudo.exe` do Windows (que não aceita `sudo -u ...`).
+
+### Proxmox (VM) no libvirt (WSL)
+
+1. Baixe o ISO:
+
+```bash
+bash wsl/debian/download-proxmox-iso.sh
+```
+
+2. Crie a VM do Proxmox:
+
+```bash
+sudo bash wsl/debian/create-proxmox-vm.sh
+```
+
+3. Veja VNC + status + DHCP leases:
+
+```bash
+bash wsl/debian/proxmox-vm-info.sh
+```
+
+4. Conclua a instalação do Proxmox via VNC:
+
+- Use um VNC Viewer no Windows e conecte no display mostrado (ex.: `vnc://127.0.0.1:1`, que equivale a `127.0.0.1:5901`).
+
+5. Quando o Proxmox estiver instalado e pegar IP via DHCP, exponha as portas para acessar do host:
+
+```bash
+sudo bash wsl/debian/forward-proxmox-vm-ports.sh
+```
+
+Por padrão:
+
+- Web UI: `https://127.0.0.1:8006`
+- SSH: `ssh -p 2222 root@127.0.0.1`
