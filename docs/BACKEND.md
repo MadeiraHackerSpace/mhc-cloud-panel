@@ -154,3 +154,18 @@ Relação com negócio: permite rodar o produto em hackerspaces sem cluster Prox
 Responsabilidade: testes automatizados (pytest).
 
 Relação com negócio: valida fluxos críticos (auth e contratação) e garante regressão controlada.
+
+## Roadmap (anotações para implementações futuras)
+
+### Para completar o modelo de negócio (visão geral)
+
+- Cobrança: integrações de pagamento, conciliação via webhooks, ciclo de renovação, suspensão/reativação por inadimplência, pró-rata, cupons/créditos, multi-moeda/impostos (se aplicável).
+- Operação: onboarding de tenant/revenda (branding, regras de preço, limites), notificações (cobrança/incidentes/tickets), observabilidade e rotinas de backup/DR.
+- Segurança: hardening de secrets, rate-limit, trilha de auditoria completa e RBAC mais fino por escopo/tenant.
+
+### Foco inicial: operações de VM + acompanhamento de recursos (estilo Grafana)
+
+- Operações de VM: resize (CPU/RAM/Disk), snapshots, backups, rebuild, console, reset senha, políticas de power/state.
+- Métricas do cluster: CPU/mem/disk/net por node/storage e capacidade disponível para decisão de provisionamento.
+- Scheduler de provisionamento: escolha de node/storage baseada em capacidade/afinidade e regras por tenant/plano.
+- Coleta e dashboard: exportar métricas para Prometheus (ou equivalente) e montar dashboards no Grafana (overview + drill-down por VM/node/tenant).
