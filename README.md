@@ -6,6 +6,11 @@ Plataforma SaaS multi-tenant para revenda e gestão de VPS sobre Proxmox VE (tra
 
 Apache-2.0. Veja [LICENSE](file:///c:/Users/fabio/Documents/trae_projects/MHC_Cloud_Panel/LICENSE).
 
+## Documentação
+
+- Backend (por módulo): [docs/BACKEND.md](docs/BACKEND.md)
+- Contribuição: [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ## Stack
 
 - Backend: FastAPI + SQLAlchemy 2.x + Alembic
