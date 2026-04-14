@@ -105,6 +105,18 @@ Alternativa (dentro do Debian / WSL):
 sudo bash wsl/debian/setup-docker.sh
 ```
 
+Bootstrap completo de ambiente (Docker + Python + Node + dependencias do projeto):
+
+```bash
+sudo bash wsl/debian/bootstrap-mhc-env.sh
+```
+
+Se quiser informar o caminho do projeto manualmente:
+
+```bash
+sudo bash wsl/debian/bootstrap-mhc-env.sh /mnt/c/Dev/mhc-cloud-panel
+```
+
 Passos manuais (Debian / WSL), equivalentes ao instalador:
 
 ```bash
