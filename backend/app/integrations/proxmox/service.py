@@ -52,6 +52,7 @@ class ProxmoxVMCreateSpec:
     template_vmid: int
     storage: str | None = None
     ipconfig0: str | None = None
+    ciuser: str | None = None
     ssh_public_key: str | None = None
     tags: list[str] | None = None
 
@@ -98,6 +99,8 @@ class ProxmoxService:
         }
         if spec.ipconfig0:
             config["ipconfig0"] = spec.ipconfig0
+        if spec.ciuser:
+            config["ciuser"] = spec.ciuser
         if spec.ssh_public_key:
             config["sshkeys"] = spec.ssh_public_key
         if spec.tags:

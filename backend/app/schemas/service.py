@@ -30,4 +30,7 @@ class ContractPlanRequest(APIModel):
     billing_cycle: str = Field(default="monthly", pattern="^(monthly|quarterly)$")
     proxmox_node: str | None = None
     template_id: uuid.UUID | None = None
+    ipconfig0: str | None = Field(default=None, max_length=256)
+    ciuser: str | None = Field(default=None, max_length=64)
+    ssh_public_key: str | None = Field(default=None, max_length=4096)
     confirm: bool = False

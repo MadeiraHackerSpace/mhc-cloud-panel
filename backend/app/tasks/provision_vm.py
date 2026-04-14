@@ -45,6 +45,9 @@ def provision_vm(self, job_id: str) -> dict:
         payload = job.payload or {}
         node = payload.get("proxmox_node")
         template_id = payload.get("template_id")
+        ipconfig0 = payload.get("ipconfig0")
+        ciuser = payload.get("ciuser")
+        ssh_public_key = payload.get("ssh_public_key")
 
         if not node:
             raise RuntimeError("node_not_selected")
@@ -68,6 +71,9 @@ def provision_vm(self, job_id: str) -> dict:
                 node=node,
                 template_vmid=template.vmid,
                 storage=template.storage,
+                ipconfig0=ipconfig0,
+                ciuser=ciuser,
+                ssh_public_key=ssh_public_key,
                 tags=[f"tenant:{service.tenant_id}", f"service:{service.id}", "mhc-cloud-panel"],
             )
             new_vmid = proxmox.create_vm_from_template(spec=create_spec)

@@ -99,6 +99,16 @@ def contract_plan(
     if not node:
         raise NotFoundError("Nenhum node disponível")
 
+    job_payload: dict = {"proxmox_node": node}
+    if payload.template_id:
+        job_payload["template_id"] = str(payload.template_id)
+    if payload.ipconfig0:
+        job_payload["ipconfig0"] = payload.ipconfig0
+    if payload.ciuser:
+        job_payload["ciuser"] = payload.ciuser
+    if payload.ssh_public_key:
+        job_payload["ssh_public_key"] = payload.ssh_public_key
+
     job = Job(
         tenant_id=service.tenant_id,
         service_id=service.id,
@@ -106,7 +116,7 @@ def contract_plan(
         job_key=f"provision:{service.id}",
         job_type="provision_vm",
         status=JobStatus.queued,
-        payload={"proxmox_node": node, "template_id": str(payload.template_id) if payload.template_id else None},
+        payload=job_payload,
     )
     db.add(job)
     db.commit()
