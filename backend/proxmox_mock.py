@@ -7,8 +7,8 @@ app = FastAPI(title="Proxmox API Mock")
 # State
 next_vmid_val = 1000
 vms = {
-    "100": {"name": "debian-12-template", "template": 1, "status": "stopped"},
-    "101": {"name": "ubuntu-24-template", "template": 1, "status": "stopped"},
+    "9000": {"name": "Ubuntu 22.04 Cloud-Init", "template": 1, "status": "stopped"},
+    "9001": {"name": "Debian 12 Cloud-Init", "template": 1, "status": "stopped"},
 }
 
 @app.get("/api2/json/nodes")
@@ -16,7 +16,7 @@ def get_nodes():
     return {
         "data": [
             {
-                "node": "pve1",
+                "node": "pve",
                 "status": "online",
                 "cpu": 0.05,
                 "maxcpu": 8,

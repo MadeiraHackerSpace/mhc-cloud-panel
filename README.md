@@ -4,10 +4,11 @@ Plataforma SaaS multi-tenant para revenda e gestão de VPS sobre Proxmox VE (tra
 
 ## Licença
 
-Apache-2.0. Veja [LICENSE](file:///c:/Users/fabio/Documents/trae_projects/MHC_Cloud_Panel/LICENSE).
+Apache-2.0. Veja [LICENSE](LICENSE).
 
 ## Documentação
 
+- Setup (Windows/WSL/Linux/macOS): [docs/SETUP.md](docs/SETUP.md)
 - Backend (por módulo): [docs/BACKEND.md](docs/BACKEND.md)
 - Contribuição: [CONTRIBUTING.md](CONTRIBUTING.md)
 
@@ -24,8 +25,16 @@ Apache-2.0. Veja [LICENSE](file:///c:/Users/fabio/Documents/trae_projects/MHC_Cl
 
 1. Copie o arquivo de exemplo:
 
+Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Linux/macOS/WSL:
+
 ```bash
-copy .env.example .env
+cp .env.example .env
 ```
 
 2. Edite `.env` com as credenciais do Proxmox (veja “Conectar ao Proxmox”).
