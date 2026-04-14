@@ -1,0 +1,41 @@
+name: Feature Request
+description: Sugira uma nova funcionalidade ou melhoria para o painel.
+title: "[FEAT] "
+labels: ["enhancement"]
+assignees: ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por sugerir uma ideia! Como somos um projeto focado em hackerspaces/labs, valorizamos ideias práticas, mas que respeitem o escopo e o [modelo de negócios](../docs/BACKEND.md) do painel.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Seu problema está relacionado a uma funcionalidade ausente?
+      description: Explique o porquê de precisar dessa funcionalidade.
+      placeholder: Exemplo: Hoje eu não consigo ver o tráfego mensal usado por cada cliente, o que dificulta o controle de abusos de rede...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Qual solução você gostaria?
+      description: Uma descrição clara e concisa do que você deseja que aconteça.
+      placeholder: Gostaria de uma nova tela no dashboard do SuperAdmin que listasse o total de banda transferido pelas VMs (consumindo a API de RRD do Proxmox)...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que você considerou
+      description: Alguma outra maneira de resolver o mesmo problema?
+      placeholder: Atualmente faço isso entrando diretamente no Proxmox e exportando CSV.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Adicione qualquer outro contexto, mockups ou capturas de tela sobre a solicitação.
+    validations:
+      required: false

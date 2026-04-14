@@ -1,0 +1,57 @@
+name: Bug Report
+description: Crie um relatório para nos ajudar a melhorar o MHC Cloud Panel
+title: "[BUG] "
+labels: ["bug"]
+assignees: ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por dedicar um tempo para relatar este bug! Verifique primeiro se o problema já não foi reportado.
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: Uma descrição clara e concisa sobre o bug.
+      placeholder: Exemplo: Ao clicar no botão "Contratar", a VM não é provisionada e recebo um erro 500.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Como reproduzir
+      description: Passos para reproduzir o comportamento.
+      placeholder: |
+        1. Logue como 'cliente@mhc.local'
+        2. Vá em 'Planos' e clique em 'Contratar' no Plano Bronze
+        3. Vá na página de VPS
+        4. Veja o erro no console: '...'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      description: O que deveria acontecer?
+      placeholder: O painel deveria mostrar a VM com o status "Provisionando".
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs e Prints
+      description: Cole logs do container (`docker compose logs backend`) ou screenshots se for erro de interface.
+      placeholder: |
+        ```bash
+        INFO:     172.18.0.6:59456 - "POST /api/v1/services/contract HTTP/1.1" 500 Internal Server Error
+        ```
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      description: Detalhes do seu setup
+      placeholder: "Ex: Windows 11 WSL2 / Docker Compose / Proxmox 8.2 (ou Mock API)"
+    validations:
+      required: true
