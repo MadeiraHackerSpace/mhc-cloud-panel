@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 245 246 248;
+  --panel: 255 255 255;
+  --text: 17 24 39;
+  --muted: 107 114 128;
+  --border: 229 231 235;
+  --brand: 79 70 229;
+}
+
+.dark {
+  --bg: 9 12 16;
+  --panel: 15 23 42;
+  --text: 226 232 240;
+  --muted: 148 163 184;
+  --border: 30 41 59;
+  --brand: 99 102 241;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--text));
+}
+
