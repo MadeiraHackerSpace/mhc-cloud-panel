@@ -261,3 +261,73 @@ curl http://localhost:8001/api2/json/nodes
 curl http://localhost:8001/api2/json/nodes/pve/qemu
 curl http://localhost:8001/api2/json/cluster/nextid
 ```
+
+## Testes com Proxmox real (criação de VM + DHCP + SSH)
+
+Este modo valida o fluxo completo: clonar template Cloud-Init, aplicar `ciuser`, injetar `sshkeys`, subir a VM, obter IP via `qemu-guest-agent` e testar login por SSH.
+
+Pré-requisitos no Proxmox (lab/staging):
+
+- Template Cloud-Init (Ubuntu/Debian) com:
+  - `openssh-server` ativo
+  - `qemu-guest-agent` instalado e ativo
+- Rede com DHCP
+- API Token com permissões no escopo de testes (node/pool/storage)
+
+### Rodar o teste de integração (via container do backend)
+
+Defina as variáveis de ambiente e rode o pytest dentro do container:
+
+```bash
+export REAL_PROXMOX=true
+export PROXMOX_HOST="https://IP_DO_PVE:8006"
+export PROXMOX_USER="api-user"
+export PROXMOX_REALM="pve"
+export PROXMOX_TOKEN_NAME="token"
+export PROXMOX_TOKEN_SECRET="secret"
+export PROXMOX_VERIFY_SSL="false"
+export TEST_PROXMOX_NODE="pve"
+export TEST_TEMPLATE_VMID="9000"
+export TEST_CIUSER="mendsec"
+
+docker compose exec -T backend pytest -q -k real_proxmox
+```
+
+Observações:
+
+- O teste está em `backend/app/tests/test_real_proxmox_ssh.py` e é skipado quando `REAL_PROXMOX` não está habilitado.
+- O IP da VM é obtido via `qemu-guest-agent`. Se falhar, revise o template.
+
+### Proxmox rodando atrás do NAT do libvirt (WSL + KVM)
+
+Se o Proxmox estiver como uma VM no libvirt com NAT, é comum que a VM criada pelo Proxmox não seja acessível diretamente do host. Nesse caso, o teste pode conectar via “jump host” (SSH no Proxmox e tunnel até a VM).
+
+Habilite o modo jump e informe credenciais de SSH para o Proxmox:
+
+```bash
+export TEST_SSH_VIA_JUMP=true
+export TEST_JUMP_HOST="IP_DO_PROXMOX_VM_NO_LIBVIRT"
+export TEST_JUMP_USER="root"
+export TEST_JUMP_PASSWORD="SENHA_DO_ROOT_NO_PROXMOX_VM"
+```
+
+Alternativa (chave privada em PEM via env):
+
+```bash
+export TEST_SSH_VIA_JUMP=true
+export TEST_JUMP_HOST="IP_DO_PROXMOX_VM_NO_LIBVIRT"
+export TEST_JUMP_USER="root"
+export TEST_JUMP_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)"
+```
+
+### KVM/libvirt no Debian (WSL)
+
+Exemplo de instalação do KVM/libvirt no Debian (WSL):
+
+```bash
+sudo apt update && sudo apt install qemu-system libvirt-daemon-system libvirt-clients
+sudo adduser $USER libvirt
+sudo adduser $USER kvm
+lsmod | grep kvm
+sudo systemctl enable --now libvirtd
+```

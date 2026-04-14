@@ -155,6 +155,23 @@ Responsabilidade: testes automatizados (pytest).
 
 Relação com negócio: valida fluxos críticos (auth e contratação) e garante regressão controlada.
 
+## Provisionamento (Cloud-Init)
+
+Na contratação (`POST /api/v1/services/contract`), além do node/template, é possível enviar parâmetros de Cloud-Init que são aplicados no clone no Proxmox:
+
+- `ciuser`: usuário dentro da VM (ex.: `mendsec`)
+- `ipconfig0`: rede Cloud-Init (ex.: `ip=dhcp` ou `ip=192.168.1.50/24,gw=192.168.1.1`)
+- `ssh_public_key`: chave pública OpenSSH a ser injetada (`sshkeys`)
+
+Esses valores seguem para o `job.payload` e são usados no worker (`provision_vm`) ao criar o `ProxmoxVMCreateSpec`.
+
+## Testes de integração (Proxmox real + SSH)
+
+Existe um teste de integração que clona uma VM em um Proxmox real, injeta Cloud-Init (DHCP + usuário + SSH key), obtém o IP via `qemu-guest-agent` e valida acesso por SSH.
+
+- Teste: `app/tests/test_real_proxmox_ssh.py` (skipado por padrão; habilite via `REAL_PROXMOX=true`)
+- Documentação de execução e cenário “Proxmox atrás do NAT do libvirt”: veja `docs/SETUP.md`
+
 ## Roadmap (anotações para implementações futuras)
 
 ### Para completar o modelo de negócio (visão geral)
