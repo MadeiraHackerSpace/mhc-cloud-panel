@@ -233,12 +233,14 @@ class NodeScheduler:
             pinned = [n for n in candidates if n.node in preferred_nodes]
             if pinned:
                 candidates = pinned  # restrict to pinned pool
-        elif policy == PP.affinity and tenant_id and self.db is not None:
+        elif policy == PP.affinity and tenant_id:
+            # _nodes_with_tenant_vms handles db=None by returning empty set
             tenant_nodes = self._nodes_with_tenant_vms(tenant_id)
             affinity_candidates = [n for n in candidates if n.node in tenant_nodes]
             if affinity_candidates:
                 candidates = affinity_candidates  # prefer co-location
-        elif policy == PP.anti_affinity and tenant_id and self.db is not None:
+        elif policy == PP.anti_affinity and tenant_id:
+            # _nodes_with_tenant_vms handles db=None by returning empty set
             tenant_nodes = self._nodes_with_tenant_vms(tenant_id)
             spread_candidates = [n for n in candidates if n.node not in tenant_nodes]
             if spread_candidates:

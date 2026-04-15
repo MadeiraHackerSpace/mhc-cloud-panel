@@ -127,7 +127,7 @@ def rebalance_cluster() -> dict:
                             virtual_machine_id=vm_to_move.id,
                             job_id=None,
                             requested_by_user_id=None,
-                            action=ServiceActionType.reboot,  # closest existing action
+                            action=ServiceActionType.migrate,
                             success=True,
                             details={
                                 "rebalance": True,

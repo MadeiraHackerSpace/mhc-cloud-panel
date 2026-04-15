@@ -112,7 +112,7 @@ def maintenance_drain(self, node_name: str) -> dict:
                         virtual_machine_id=vm.id,
                         job_id=None,
                         requested_by_user_id=None,
-                        action=ServiceActionType.reboot,  # closest existing action type
+                        action=ServiceActionType.migrate,
                         success=True,
                         details={
                             "maintenance_drain": True,

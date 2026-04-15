@@ -1,5 +1,6 @@
 import os
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -73,6 +74,19 @@ def client(monkeypatch):
         db.add(user)
         db.commit()
 
+        # Super-admin user for admin endpoint tests
+        admin_user = User(
+            tenant_id=None,  # global super admin has no tenant
+            role_id=roles["super_admin"].id,
+            email="admin@teste.local",
+            full_name="Admin Teste",
+            password_hash=hash_password("adminpass123"),
+            is_active=True,
+            is_email_verified=True,
+        )
+        db.add(admin_user)
+        db.commit()
+
         plan = Plan(
             name="Bronze",
             price_monthly=Decimal("29.90"),
@@ -87,6 +101,7 @@ def client(monkeypatch):
             backups_enabled=False,
             upgrade_downgrade_allowed=True,
             is_active=True,
+            # placement_policy uses the default ('none') — no explicit field needed
         )
         db.add(plan)
         template = ProxmoxTemplate(name="Ubuntu", node="pve", vmid=9000, storage="local-lvm", is_enabled=True)
@@ -101,6 +116,34 @@ def client(monkeypatch):
     from app.tasks import provision_vm as task_module
 
     monkeypatch.setattr(task_module.provision_vm, "delay", lambda *_args, **_kwargs: DummyAsyncResult())
+
+    # Mock ProxmoxService.list_nodes so NodeScheduler works without a real cluster
+    _mock_nodes = [
+        {
+            "node": "pve",
+            "status": "online",
+            "mem": 4 * 1024 * 1024 * 1024,
+            "maxmem": 32 * 1024 * 1024 * 1024,
+            "cpu": 0.05,
+            "maxcpu": 8,
+            "disk": 100 * 1024 * 1024 * 1024,
+            "maxdisk": 500 * 1024 * 1024 * 1024,
+        },
+        {
+            "node": "pve2",
+            "status": "online",
+            "mem": 2 * 1024 * 1024 * 1024,
+            "maxmem": 64 * 1024 * 1024 * 1024,
+            "cpu": 0.02,
+            "maxcpu": 16,
+            "disk": 50 * 1024 * 1024 * 1024,
+            "maxdisk": 1000 * 1024 * 1024 * 1024,
+        },
+    ]
+    monkeypatch.setattr(
+        "app.integrations.proxmox.service.ProxmoxService.list_nodes",
+        lambda self: _mock_nodes,
+    )
 
     app = create_app()
     with TestClient(app) as c:

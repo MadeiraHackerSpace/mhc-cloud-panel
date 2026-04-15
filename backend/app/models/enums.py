@@ -74,3 +74,4 @@ class ServiceActionType(str, enum.Enum):
     cancel = "cancel"
     suspend = "suspend"
     reactivate = "reactivate"
+    migrate = "migrate"  # Live migration between Proxmox nodes (rebalancing/maintenance)
