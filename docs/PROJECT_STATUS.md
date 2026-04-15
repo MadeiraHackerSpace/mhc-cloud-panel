@@ -1,6 +1,6 @@
 # MHC Cloud Panel — Reconhecimento do Projeto
 
-> Gerado em: 2026-04-14  
+> Gerado em: 2026-04-14 | Atualizado em: 2026-04-14 (melhorias ProxLB implementadas)  
 > Objetivo: Mapear o modelo de negócio, o que foi implementado e o que ainda falta.
 
 ---
@@ -67,8 +67,10 @@ Todos os 26 models de domínio estão criados:
 | Task | Status | Detalhes |
 |---|---|---|
 | `provision_vm` | ✅ Completo | Clone de template Cloud-Init, network, SSH key, IP |
-| `sync_vm_status` | ✅ Completo | Atualiza status VM via Proxmox |
-| `mark_overdue_and_suspend` | ✅ Completo | Marca inadimplentes, suspende serviço, para VM |
+| `sync_vm_status` | ✅ Completo | Atualiza status VM via Proxmox — **agendada via Celery Beat (*/5 min)** |
+| `mark_overdue_and_suspend` | ✅ Completo | Marca inadimplentes, suspende serviço, para VM — **agendada via Celery Beat (a cada hora)** |
+| `rebalance_cluster` | ✅ **NOVO** | Rebalanceamento de carga inspirado no ProxLB — **agendado via Celery Beat (*/30 min)** |
+| `maintenance_drain` | ✅ **NOVO** | Drena VMs de node em manutenção migrando para melhor node disponível |
 
 ### ✅ Backend — Integrações
 
@@ -76,6 +78,7 @@ Todos os 26 models de domínio estão criados:
 |---|---|---|
 | `ProxmoxService` | ✅ Completo | Clone, start/stop/reboot, status, nodes, templates |
 | Proxmox Cloud-Init | ✅ Completo | ciuser, ipconfig, SSH key injection |
+| `migrate_vm()` | ✅ **NOVO** | Live migration de VMs entre nodes (usado pelo rebalanceamento e maintenance drain) |
 | Teste real SSH | ✅ Completo | Valida clone + Cloud-Init + acesso SSH real |
 | Email | ⚠️ Placeholder | Pasta criada, `__init__.py` vazio |
 

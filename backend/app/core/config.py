@@ -39,6 +39,18 @@ class Settings(BaseSettings):
     proxmox_timeout_seconds: int = 15
     proxmox_retry_total: int = 3
 
+    # NodeScheduler: method used to pick best node (memory | cpu | disk)
+    scheduler_method: str = "memory"
+    # Percentage of node resource reserved as buffer before considering overprovisioning
+    # e.g. 10 means the scheduler won't use the last 10% of RAM
+    scheduler_reserve_pct: int = 10
+
+    # Rebalancing: maximum allowed delta (%) between most-loaded and least-loaded node
+    # If exceeded, the rebalance_cluster task migrates VMs
+    rebalance_threshold_pct: int = 20
+    # Whether the rebalancer actually migrates VMs (False = dry-run mode)
+    rebalance_enabled: bool = False
+
     @property
     def database_url(self) -> str:
         if self.database_url_override:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.config import get_settings
 
@@ -20,6 +21,8 @@ celery_app = Celery(
         "app.tasks.provision_vm",
         "app.tasks.sync_vm_status",
         "app.tasks.billing",
+        "app.tasks.rebalance_cluster",
+        "app.tasks.maintenance_drain",
     ],
 )
 
@@ -32,4 +35,23 @@ celery_app.conf.update(
     enable_utc=True,
     task_always_eager=always_eager,
     task_eager_propagates=True,
+    # ── Celery Beat periodic schedule ──────────────────────────────────────
+    # Sync VM status from Proxmox every 5 minutes
+    # Check overdue invoices and suspend services every hour
+    # Rebalance cluster every 30 minutes (dry-run by default; enable via REBALANCE_ENABLED=true)
+    beat_schedule={
+        "sync-vm-status-every-5min": {
+            "task": "app.tasks.sync_vm_status.sync_vm_status",
+            "schedule": crontab(minute="*/5"),
+        },
+        "mark-overdue-and-suspend-hourly": {
+            "task": "app.tasks.billing.mark_overdue_and_suspend",
+            "schedule": crontab(minute=0),  # top of every hour
+            "kwargs": {"grace_days": 3},
+        },
+        "rebalance-cluster-every-30min": {
+            "task": "app.tasks.rebalance_cluster.rebalance_cluster",
+            "schedule": crontab(minute="*/30"),
+        },
+    },
 )

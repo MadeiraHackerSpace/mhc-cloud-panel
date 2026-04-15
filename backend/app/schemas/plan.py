@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from pydantic import Field
 
+from app.models.plan import PlacementPolicy
 from app.schemas.common import APIModel
 
 
@@ -23,6 +24,7 @@ class PlanOut(APIModel):
     backups_enabled: bool
     upgrade_downgrade_allowed: bool
     is_active: bool
+    placement_policy: PlacementPolicy
 
 
 class PlanCreate(APIModel):
@@ -39,3 +41,4 @@ class PlanCreate(APIModel):
     backups_enabled: bool = False
     upgrade_downgrade_allowed: bool = True
     is_active: bool = True
+    placement_policy: PlacementPolicy = PlacementPolicy.none

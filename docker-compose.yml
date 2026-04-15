@@ -53,6 +53,21 @@ services:
         condition: service_healthy
     command: ["celery", "-A", "app.tasks.celery_app", "worker", "-l", "INFO", "-Q", "default"]
 
+  celery-beat:
+    build:
+      context: ./backend
+    env_file:
+      - ./.env
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    command: ["celery", "-A", "app.tasks.celery_app", "beat", "-l", "INFO", "--scheduler", "celery.beat:PersistentScheduler"]
+
+
   proxmox_mock:
     build:
       context: ./backend

@@ -22,8 +22,22 @@ def get_nodes():
                 "maxcpu": 8,
                 "mem": 4 * 1024 * 1024 * 1024,
                 "maxmem": 32 * 1024 * 1024 * 1024,
+                "disk": 100 * 1024 * 1024 * 1024,
+                "maxdisk": 500 * 1024 * 1024 * 1024,
                 "uptime": 3600,
-            }
+            },
+            {
+                # Second node with more free resources to exercise NodeScheduler
+                "node": "pve2",
+                "status": "online",
+                "cpu": 0.02,
+                "maxcpu": 16,
+                "mem": 2 * 1024 * 1024 * 1024,
+                "maxmem": 64 * 1024 * 1024 * 1024,
+                "disk": 50 * 1024 * 1024 * 1024,
+                "maxdisk": 1000 * 1024 * 1024 * 1024,
+                "uptime": 7200,
+            },
         ]
     }
 
@@ -116,6 +130,16 @@ def delete_vm(node: str, vmid: str):
     if vmid in vms:
         del vms[vmid]
     return {"data": f"UPID:{node}:00000000:00000000:00000000:qmdestroy:{vmid}:root@pam!"}
+
+
+@app.post("/api2/json/nodes/{node}/qemu/{vmid}/migrate")
+async def migrate_vm(node: str, vmid: str, request: Request):
+    """Mock live migration — just records the new node in VM state."""
+    form = await request.form()
+    target = form.get("target", node)
+    if vmid in vms:
+        vms[vmid]["node"] = target  # Track where the VM "moved"
+    return {"data": f"UPID:{target}:00000000:00000000:00000000:qmmigrate:{vmid}:root@pam!"}
 
 if __name__ == "__main__":
     import uvicorn

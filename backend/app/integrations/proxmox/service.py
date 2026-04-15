@@ -41,6 +41,8 @@ class ProxmoxAdapter(Protocol):
 
     def delete_vm(self, *, node: str, vmid: int) -> None: ...
 
+    def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None: ...
+
 
 @dataclass(frozen=True)
 class ProxmoxVMCreateSpec:
@@ -124,6 +126,10 @@ class ProxmoxService:
     def delete_vm(self, *, node: str, vmid: int) -> None:
         self.adapter.delete_vm(node=node, vmid=vmid)
 
+    def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None:
+        """Trigger a live migration of a VM to another node via Proxmox API."""
+        self.adapter.migrate_vm(node=node, vmid=vmid, target_node=target_node)
+
 
 class ProxmoxerAdapter:
     def __init__(self, proxmox: Any, timeout_seconds: int):
@@ -197,6 +203,9 @@ class ProxmoxerAdapter:
     def delete_vm(self, *, node: str, vmid: int) -> None:
         self.proxmox.nodes(node).qemu(vmid).delete()
 
+    def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None:
+        self.proxmox.nodes(node).qemu(vmid).migrate.post(target=target_node, online=1)
+
 
 class HttpMockAdapter:
     def __init__(self, *, base_url: str, timeout_seconds: int):
@@ -257,3 +266,9 @@ class HttpMockAdapter:
 
     def delete_vm(self, *, node: str, vmid: int) -> None:
         self._delete(f"/api2/json/nodes/{node}/qemu/{vmid}")
+
+    def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None:
+        self._post(
+            f"/api2/json/nodes/{node}/qemu/{vmid}/migrate",
+            data={"target": target_node, "online": "1"},
+        )

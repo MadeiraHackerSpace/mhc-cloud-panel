@@ -49,8 +49,31 @@ def provision_vm(self, job_id: str) -> dict:
         ciuser = payload.get("ciuser")
         ssh_public_key = payload.get("ssh_public_key")
 
+        # ── Smart Node Scheduling (ProxLB-inspired) ──────────────────────────
+        # If no node was explicitly chosen, let the NodeScheduler pick the best
+        # one based on real cluster metrics, plan placement policy, and
+        # overprovisioning protection.
         if not node:
-            raise RuntimeError("node_not_selected")
+            from app.services.node_scheduler import (  # local import avoids circular
+                InsufficientCapacityError,
+                NoAvailableNodeError,
+                NodeScheduler,
+            )
+            proxmox_svc = ProxmoxService.from_settings()
+            scheduler = NodeScheduler(proxmox=proxmox_svc, db=db)
+            try:
+                node = scheduler.best_node(
+                    ram_mb=plan.ram_mb,
+                    vcpu=plan.vcpu,
+                    disk_gb=plan.disk_gb,
+                    placement_policy=plan.placement_policy,
+                    tenant_id=service.tenant_id,
+                )
+                log.info("provision_vm.auto_node_selected", job_id=job_id, node=node)
+            except (NoAvailableNodeError, InsufficientCapacityError) as exc:
+                raise RuntimeError(f"node_scheduling_failed: {exc}") from exc
+        # ─────────────────────────────────────────────────────────────────────
+
         template = None
         if template_id:
             template = db.scalar(select(ProxmoxTemplate).where(ProxmoxTemplate.id == uuid.UUID(template_id)))

@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import enum
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Index, Integer, Numeric, String
+from sqlalchemy import Boolean, Enum, Index, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
+
+
+class PlacementPolicy(str, enum.Enum):
+    none = "none"              # NodeScheduler picks best node freely
+    affinity = "affinity"      # VMs of same tenant/plan stay on same node
+    anti_affinity = "anti_affinity"  # Spread across different nodes (HA)
+    pinned = "pinned"          # Reserved for high-performance/dedicated nodes
 
 
 class Plan(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
@@ -28,3 +36,8 @@ class Plan(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     upgrade_downgrade_allowed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    placement_policy: Mapped[PlacementPolicy] = mapped_column(
+        Enum(PlacementPolicy, name="placement_policy"),
+        default=PlacementPolicy.none,
+        nullable=False,
+    )
