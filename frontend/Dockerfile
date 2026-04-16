@@ -1,15 +1,15 @@
-FROM node:20-alpine
+FROM oven/bun:1-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json* /app/
-RUN npm install
+COPY package.json ./
+RUN bun install
 
 COPY . /app
 
 ENV PORT=3000
 EXPOSE 3000
 
-RUN npm run build
+RUN bun run build
 
-CMD ["npm", "run", "start"]
+CMD ["bun", "run", "start"]
