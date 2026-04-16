@@ -4,7 +4,8 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 
 from app.core.config import get_settings
@@ -66,7 +67,13 @@ class TokenPayloadError(Exception):
 def decode_token(token: str) -> dict[str, Any]:
     settings = get_settings()
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"], issuer=settings.jwt_issuer)
-    except JWTError as exc:
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret,
+            algorithms=["HS256"],
+            issuer=settings.jwt_issuer,
+            options={"require": ["exp", "iat", "iss"]},
+        )
+    except InvalidTokenError as exc:
         raise TokenPayloadError("Token inválido") from exc
     return payload

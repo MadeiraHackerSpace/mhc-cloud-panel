@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,7 +16,12 @@ def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging()
 
-    app = FastAPI(title="MHC Cloud Panel", version="0.1.0")
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        seed_if_enabled()
+        yield
+
+    app = FastAPI(title="MHC Cloud Panel", version="0.1.0", lifespan=lifespan)
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 
     app.add_middleware(
@@ -28,10 +35,6 @@ def create_app() -> FastAPI:
     @app.exception_handler(AppError)
     async def app_error_handler(_, exc: AppError):
         return exc_to_response(exc)
-
-    @app.on_event("startup")
-    def _startup() -> None:
-        seed_if_enabled()
 
     return app
 
