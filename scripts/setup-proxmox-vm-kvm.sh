@@ -6,7 +6,7 @@
 set -e
 
 # Configurações
-PROXMOX_ISO_URL="https://enterprise.proxmox.com/iso/proxmox-ve_9.0-1.iso-20240906T120532Z"
+PROXMOX_ISO_URL="https://enterprise.proxmox.com/iso/proxmox-ve_9.1-1.iso"
 PROXMOX_ISO_PATH="/var/lib/libvirt/images/proxmox-ve-9.0.iso"
 VM_NAME="proxmox-ve"
 VM_DISK_PATH="/var/lib/libvirt/images/${VM_NAME}.qcow2"
