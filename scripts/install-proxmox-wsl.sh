@@ -32,15 +32,24 @@ apt upgrade -y -qq
 
 # Instalar dependências
 info "Instalando dependências..."
-apt install -y -qq wget curl gnupg2 software-properties-common apt-transport-https ca-certificates
+apt install -y -qq wget curl gnupg2 apt-transport-https ca-certificates lsb-release 2>/dev/null || \
+apt install -y wget curl gnupg2 apt-transport-https ca-certificates
 
 # Detectar versão do Debian
-DEBIAN_VERSION=$(lsb_release -cs)
+DEBIAN_VERSION=$(lsb_release -cs 2>/dev/null || echo "unknown")
 info "Debian detectado: $DEBIAN_VERSION"
 
 # Adicionar repositório Proxmox
 info "Adicionando repositório Proxmox..."
-if [[ "$DEBIAN_VERSION" == "bookworm" ]]; then
+if [[ "$DEBIAN_VERSION" == "trixie" ]]; then
+    # Proxmox VE 9.0 para Debian 13 (Trixie)
+    wget -q https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg \
+        -O /etc/apt/trusted.gpg.d/proxmox-release-trixie.gpg 2>/dev/null || \
+    curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg \
+        -o /etc/apt/trusted.gpg.d/proxmox-release-trixie.gpg
+    echo "deb http://download.proxmox.com/debian/pve trixie pve-no-subscription" \
+        > /etc/apt/sources.list.d/pve-install-repo.list
+elif [[ "$DEBIAN_VERSION" == "bookworm" ]]; then
     wget -q https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg \
         -O /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg
     echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
@@ -59,6 +68,10 @@ apt update -qq
 # Instalar Proxmox (apenas componentes essenciais)
 info "Instalando componentes do Proxmox..."
 DEBIAN_FRONTEND=noninteractive apt install -y -qq \
+    proxmox-ve \
+    postfix \
+    open-iscsi 2>/dev/null || \
+DEBIAN_FRONTEND=noninteractive apt install -y \
     proxmox-ve \
     postfix \
     open-iscsi
