@@ -42,7 +42,7 @@ export default function VNCConsole({ vmId, proxmoxHost }: VNCConsoleProps) {
         if (!mounted) return;
 
         // Dynamically import noVNC only on client side
-        const RFBModule = await import('@novnc/novnc/core/rfb.js');
+        const RFBModule = await import('@novnc/novnc/lib/rfb.js');
         const RFB = RFBModule.default;
 
         if (!canvasRef.current || !mounted) {
