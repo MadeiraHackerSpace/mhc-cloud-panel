@@ -17,7 +17,7 @@ from app.models.service_action import ServiceAction
 from app.models.user import User
 from app.models.virtual_machine import VirtualMachine
 from app.schemas.common import Page, PageMeta
-from app.schemas.vm import VMActionRequest, VMOut
+from app.schemas.vm import VMActionRequest, VMOut, VNCProxyOut
 from app.services.audit_service import AuditService
 
 router = APIRouter()
@@ -196,3 +196,24 @@ def cancel_service(
         request=request,
     )
     return {"ok": True, "status": service.status}
+
+
+@router.get("/{vm_id}/vnc", response_model=VNCProxyOut)
+def get_vnc_proxy(
+    vm_id: uuid.UUID,
+    request: Request,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    vm = _get_vm_scoped(db, vm_id=vm_id, current=current)
+    proxmox = ProxmoxService.from_settings()
+    proxy = proxmox.create_vnc_proxy(node=vm.proxmox_node, vmid=vm.proxmox_vmid)
+    AuditService(db).log(
+        action="vm.vnc_proxy",
+        entity="virtual_machines",
+        entity_id=str(vm.id),
+        actor=current,
+        tenant_id=current.tenant_id,
+        request=request,
+    )
+    return proxy

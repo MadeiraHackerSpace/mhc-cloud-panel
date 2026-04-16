@@ -144,3 +144,14 @@ async def migrate_vm(node: str, vmid: str, request: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("proxmox_mock:app", host="0.0.0.0", port=8001, reload=True)
+
+
+@app.post("/api2/json/nodes/{node}/qemu/{vmid}/vncproxy")
+def create_vnc_proxy(node: str, vmid: str):
+    return {
+        "data": {
+            "ticket": "mock-vnc-ticket-" + vmid,
+            "port": 5900 + int(vmid) % 100,
+            "upid": f"UPID:{node}:00000000:00000000:00000000:qmvncproxy:{vmid}:root@pam!"
+        }
+    }

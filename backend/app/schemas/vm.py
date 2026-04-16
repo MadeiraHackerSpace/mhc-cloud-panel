@@ -23,3 +23,9 @@ class VMOut(APIModel):
 
 class VMActionRequest(APIModel):
     confirm: bool = False
+
+
+class VNCProxyOut(APIModel):
+    ticket: str
+    port: int
+    upid: str

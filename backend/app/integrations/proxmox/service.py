@@ -43,6 +43,8 @@ class ProxmoxAdapter(Protocol):
 
     def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None: ...
 
+    def create_vnc_proxy(self, *, node: str, vmid: int) -> dict[str, Any]: ...
+
 
 @dataclass(frozen=True)
 class ProxmoxVMCreateSpec:
@@ -130,6 +132,12 @@ class ProxmoxService:
         """Trigger a live migration of a VM to another node via Proxmox API."""
         self.adapter.migrate_vm(node=node, vmid=vmid, target_node=target_node)
 
+    def create_vnc_proxy(self, *, node: str, vmid: int) -> dict[str, Any]:
+        """Create a VNC proxy for web console access.
+        Returns: {"ticket": str, "port": int, "upid": str}
+        """
+        return self.adapter.create_vnc_proxy(node=node, vmid=vmid)
+
 
 class ProxmoxerAdapter:
     def __init__(self, proxmox: Any, timeout_seconds: int):
@@ -206,6 +214,12 @@ class ProxmoxerAdapter:
     def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None:
         self.proxmox.nodes(node).qemu(vmid).migrate.post(target=target_node, online=1)
 
+    def create_vnc_proxy(self, *, node: str, vmid: int) -> dict[str, Any]:
+        """Create a VNC proxy for web console access.
+        Returns: {"ticket": str, "port": int, "upid": str}
+        """
+        return dict(self.proxmox.nodes(node).qemu(vmid).vncproxy.post(websocket="1"))
+
 
 class HttpMockAdapter:
     def __init__(self, *, base_url: str, timeout_seconds: int):
@@ -272,3 +286,9 @@ class HttpMockAdapter:
             f"/api2/json/nodes/{node}/qemu/{vmid}/migrate",
             data={"target": target_node, "online": "1"},
         )
+
+    def create_vnc_proxy(self, *, node: str, vmid: int) -> dict[str, Any]:
+        """Create a VNC proxy for web console access.
+        Returns: {"ticket": str, "port": int, "upid": str}
+        """
+        return self._post(f"/api2/json/nodes/{node}/qemu/{vmid}/vncproxy", data={"websocket": "1"})
