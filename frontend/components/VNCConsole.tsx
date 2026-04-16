@@ -21,6 +21,7 @@ export default function VNCConsole({ vmId, proxmoxHost }: VNCConsoleProps) {
 
   useEffect(() => {
     let rfb: any = null;
+    let mounted = true;
 
     async function initVNC() {
       try {
@@ -38,11 +39,14 @@ export default function VNCConsole({ vmId, proxmoxHost }: VNCConsoleProps) {
 
         const data: VNCProxyData = await response.json();
 
-        // Dynamically import noVNC to avoid SSR issues
-        const { default: RFB } = await import('@novnc/novnc/core/rfb');
+        if (!mounted) return;
 
-        if (!canvasRef.current) {
-          throw new Error('Canvas ref not available');
+        // Dynamically import noVNC only on client side
+        const RFBModule = await import('@novnc/novnc/core/rfb.js');
+        const RFB = RFBModule.default;
+
+        if (!canvasRef.current || !mounted) {
+          return;
         }
 
         // Build WebSocket URL
@@ -58,31 +62,40 @@ export default function VNCConsole({ vmId, proxmoxHost }: VNCConsoleProps) {
         rfb.resizeSession = true;
 
         rfb.addEventListener('connect', () => {
-          setStatus('connected');
+          if (mounted) setStatus('connected');
         });
 
         rfb.addEventListener('disconnect', () => {
-          setStatus('disconnected');
+          if (mounted) setStatus('disconnected');
         });
 
         rfb.addEventListener('securityfailure', (e: any) => {
-          setStatus('error');
-          setError(`Security failure: ${e.detail.reason}`);
+          if (mounted) {
+            setStatus('error');
+            setError(`Security failure: ${e.detail.reason}`);
+          }
         });
 
         rfbRef.current = rfb;
       } catch (err) {
-        setStatus('error');
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        console.error('VNC initialization error:', err);
+        if (mounted) {
+          setStatus('error');
+          setError(err instanceof Error ? err.message : 'Unknown error');
+          console.error('VNC initialization error:', err);
+        }
       }
     }
 
     initVNC();
 
     return () => {
+      mounted = false;
       if (rfbRef.current) {
-        rfbRef.current.disconnect();
+        try {
+          rfbRef.current.disconnect();
+        } catch (e) {
+          // Ignore disconnect errors
+        }
         rfbRef.current = null;
       }
     };
