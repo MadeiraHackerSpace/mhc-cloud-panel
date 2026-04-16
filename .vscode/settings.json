@@ -1,3 +1,4 @@
 {
-    "python.useEnvironmentsExtension": true
+    "python.useEnvironmentsExtension": true,
+    "kiroAgent.configureMCP": "Disabled"
 }

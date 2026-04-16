@@ -157,9 +157,16 @@ class ProxmoxerAdapter:
             raise ProxmoxError("Dependência proxmoxer não disponível") from exc
 
         user = f"{settings.proxmox_user}@{settings.proxmox_realm}"
-        host = str(settings.proxmox_host)
+
+        # proxmoxer expects just the hostname/IP, not a full URL.
+        # Extract host from AnyUrl (e.g. "https://1.2.3.4:8006" → "1.2.3.4")
+        parsed = settings.proxmox_host
+        host = parsed.host  # type: ignore[union-attr]
+        port = parsed.port or 8006  # type: ignore[union-attr]
+
         proxmox = ProxmoxAPI(
             host,
+            port=port,
             user=user,
             token_name=settings.proxmox_token_name,
             token_value=settings.proxmox_token_secret,
