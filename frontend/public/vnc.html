@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console VNC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #header {
+            background: #1a1a1a;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        #header h1 {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        #header .info {
+            font-size: 0.875rem;
+            color: #999;
+        }
+        
+        #status {
+            padding: 1rem 1.5rem;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        #status.loading {
+            display: flex;
+        }
+        
+        #status.hidden {
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #vnc-container {
+            flex: 1;
+            display: none;
+            position: relative;
+        }
+        
+        #vnc-container.active {
+            display: block;
+        }
+        
+        #vnc-screen {
+            width: 100%;
+            height: 100%;
+        }
+        
+        #footer {
+            background: #1a1a1a;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            color: #999;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        #footer.active {
+            display: flex;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .error {
+            color: #ef4444;
+            max-width: 600px;
+        }
+        
+        .error svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+        }
+        
+        .back-button {
+            color: #999;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+        
+        .back-button:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <a href="#" id="back-link" class="back-button">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </a>
+            <div>
+                <h1 id="vm-name">Console VNC</h1>
+                <div class="info" id="vm-info"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="status" class="loading">
+        <div class="spinner"></div>
+        <p id="status-text">Conectando ao console...</p>
+    </div>
+    
+    <div id="vnc-container">
+        <div id="vnc-screen"></div>
+    </div>
+    
+    <div id="footer">
+        <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>Conectado</span>
+        </div>
+        <span>Use Ctrl+Alt+Del via menu do navegador</span>
+    </div>
+    
+    <script type="module">
+        import RFB from 'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.5.0/lib/rfb.js';
+        
+        const params = new URLSearchParams(window.location.search);
+        const vmId = params.get('vmId');
+        const vmName = params.get('vmName') || 'VM';
+        const vmNode = params.get('vmNode');
+        const vmVmid = params.get('vmVmid');
+        
+        document.getElementById('vm-name').textContent = vmName;
+        if (vmNode && vmVmid) {
+            document.getElementById('vm-info').textContent = `Node: ${vmNode} • VMID: ${vmVmid}`;
+        }
+        
+        document.getElementById('back-link').href = `/dashboard/vps/${vmId}`;
+        
+        async function initVNC() {
+            try {
+                const response = await fetch(`/api/vms/${vmId}/vnc`, {
+                    credentials: 'include',
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Falha ao obter credenciais VNC: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                const proxmoxHost = new URLSearchParams(window.location.search).get('proxmoxHost') || 'localhost';
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${proxmoxHost}:${data.port}/?vncticket=${encodeURIComponent(data.ticket)}`;
+                
+                const rfb = new RFB(
+                    document.getElementById('vnc-screen'),
+                    wsUrl,
+                    { credentials: { password: data.ticket } }
+                );
+                
+                rfb.scaleViewport = true;
+                rfb.resizeSession = true;
+                
+                rfb.addEventListener('connect', () => {
+                    document.getElementById('status').classList.add('hidden');
+                    document.getElementById('vnc-container').classList.add('active');
+                    document.getElementById('footer').classList.add('active');
+                });
+                
+                rfb.addEventListener('disconnect', () => {
+                    showError('Desconectado do console');
+                });
+                
+                rfb.addEventListener('securityfailure', (e) => {
+                    showError(`Falha de segurança: ${e.detail.reason}`);
+                });
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+        
+        function showError(message) {
+            const status = document.getElementById('status');
+            status.classList.remove('loading');
+            status.innerHTML = `
+                <div class="error">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;">Erro ao conectar</p>
+                    <p style="font-size: 0.875rem;">${message}</p>
+                </div>
+            `;
+        }
+        
+        initVNC();
+    </script>
+</body>
+</html>
