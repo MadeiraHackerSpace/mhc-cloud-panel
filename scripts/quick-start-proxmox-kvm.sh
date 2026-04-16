@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Quick Start: Proxmox VE 9.0 em VM KVM
-# Este script automatiza todo o processo de setup
+# Quick Start: Proxmox VE no Debian WSL via KVM
+# Este script automatiza o setup de uma VM Proxmox com libvirt
 
 set -e
 
@@ -37,7 +37,7 @@ fi
 # Menu
 show_menu() {
     echo ""
-    echo -e "${BLUE}Proxmox VE 9.0 em VM KVM - Quick Start${NC}"
+    echo -e "${BLUE}Proxmox VE em VM KVM - Quick Start${NC}"
     echo "========================================"
     echo "1. Criar VM Proxmox (download + setup)"
     echo "2. Iniciar VM existente"
@@ -53,7 +53,7 @@ show_menu() {
 
 # Criar VM
 create_vm() {
-    log_step "Criando VM Proxmox VE 9.0"
+    log_step "Criando VM Proxmox VE"
     
     if ! command -v virt-install &> /dev/null; then
         log_error "virt-install não está instalado"

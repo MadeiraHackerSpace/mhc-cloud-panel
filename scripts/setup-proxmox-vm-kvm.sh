@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Setup Proxmox VE 9.0 em VM KVM no Debian WSL
-# Este script cria uma VM com libvirt e instala Proxmox VE 9.0
+# Setup Proxmox VE em VM KVM no Debian WSL
+# Este script cria uma VM com libvirt e instala Proxmox VE
 
 set -e
 
@@ -77,8 +77,8 @@ fi
 
 # Baixar ISO se não existir
 if [ ! -f "$PROXMOX_ISO_PATH" ]; then
-    log_info "Baixando Proxmox VE 9.0 ISO..."
-    log_warn "Isso pode levar alguns minutos (~800MB)..."
+    log_info "Baixando Proxmox VE ISO..."
+    log_warn "Isso pode levar alguns minutos (~1.8GB)..."
     
     mkdir -p "$(dirname "$PROXMOX_ISO_PATH")"
     

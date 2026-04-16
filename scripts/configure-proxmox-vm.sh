@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Configurar Proxmox VE 9.0 após instalação
-# Este script configura a VM Proxmox com as credenciais e tokens necessários
+# Configurar Proxmox VE após instalação
+# Este script configura o Proxmox com usuário, role e token de API para o MHC Cloud Panel
 
 set -e
 
@@ -131,7 +131,7 @@ generate_env() {
     log_info "Gerando arquivo .env..."
     
     cat > .env.proxmox << EOF
-# Configuração Proxmox VE 9.0 em VM KVM
+# Configuração Proxmox VE para o MHC Cloud Panel
 
 # Proxmox Host
 PROXMOX_HOST=https://$PROXMOX_HOST:8006
@@ -146,10 +146,6 @@ NEXT_PUBLIC_PROXMOX_HOST=$PROXMOX_HOST
 
 # Node padrão
 PROXMOX_DEFAULT_NODE=$node_name
-
-# Configurações de VM
-PROXMOX_VM_STORAGE=local
-PROXMOX_VM_TEMPLATE_STORAGE=local
 
 EOF
     
