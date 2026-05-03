@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -45,6 +46,8 @@ class ProxmoxAdapter(Protocol):
 
     def create_vnc_proxy(self, *, node: str, vmid: int) -> dict[str, Any]: ...
 
+    def wait_for_task(self, *, node: str, upid: str, timeout_seconds: int) -> dict[str, Any]: ...
+
 
 @dataclass(frozen=True)
 class ProxmoxVMCreateSpec:
@@ -65,6 +68,21 @@ class ProxmoxService:
     def __init__(self, adapter: ProxmoxAdapter):
         self.adapter = adapter
         self.settings = get_settings()
+
+    @staticmethod
+    def _sanitize_pve_tag(tag: str) -> str:
+        cleaned = []
+        for ch in tag:
+            if ch.isalnum() or ch in {"_", "-", ".", "+"}:
+                cleaned.append(ch)
+            else:
+                cleaned.append("-")
+        out = "".join(cleaned).strip("-")
+        if not out:
+            return ""
+        if not out[0].isalnum():
+            out = f"x{out}"
+        return out[:128]
 
     @classmethod
     def from_settings(cls, settings: Settings | None = None) -> "ProxmoxService":
@@ -90,13 +108,16 @@ class ProxmoxService:
     @retry(stop=stop_after_attempt(get_settings().proxmox_retry_total), wait=wait_exponential(min=1, max=8), reraise=True)
     def create_vm_from_template(self, *, spec: ProxmoxVMCreateSpec) -> int:
         new_vmid = self.adapter.next_vmid()
-        self.adapter.clone_vm(
+        upid = self.adapter.clone_vm(
             node=spec.node,
             template_vmid=spec.template_vmid,
             new_vmid=new_vmid,
             name=spec.name,
             storage=spec.storage,
         )
+        if upid:
+            timeout_seconds = max(60, int(self.settings.proxmox_timeout_seconds) * 6)
+            self.adapter.wait_for_task(node=spec.node, upid=str(upid), timeout_seconds=timeout_seconds)
         config: dict[str, Any] = {
             "cores": spec.vcpu,
             "memory": spec.ram_mb,
@@ -108,7 +129,10 @@ class ProxmoxService:
         if spec.ssh_public_key:
             config["sshkeys"] = spec.ssh_public_key
         if spec.tags:
-            config["tags"] = ",".join(spec.tags)
+            tags = [self._sanitize_pve_tag(t) for t in spec.tags]
+            tags = [t for t in tags if t]
+            if tags:
+                config["tags"] = ",".join(tags)
 
         self.adapter.config_vm(node=spec.node, vmid=new_vmid, config=config)
         return new_vmid
@@ -144,6 +168,12 @@ class ProxmoxerAdapter:
         self.proxmox = proxmox
         self.timeout_seconds = timeout_seconds
 
+    def _safe(self, action: str, fn):
+        try:
+            return fn()
+        except Exception as exc:
+            raise ProxmoxError("Falha ao comunicar com Proxmox", details={"action": action, "error": str(exc)}) from exc
+
     @classmethod
     def from_settings(cls, settings: Settings) -> "ProxmoxerAdapter":
         if not settings.proxmox_host:
@@ -177,17 +207,16 @@ class ProxmoxerAdapter:
         return cls(proxmox=proxmox, timeout_seconds=settings.proxmox_timeout_seconds)
 
     def list_nodes(self) -> list[dict[str, Any]]:
-        return list(self.proxmox.nodes.get())
+        return self._safe("list_nodes", lambda: list(self.proxmox.nodes.get()))
 
     def list_storages(self, *, node: str) -> list[dict[str, Any]]:
-        return list(self.proxmox.nodes(node).storage.get())
+        return self._safe("list_storages", lambda: list(self.proxmox.nodes(node).storage.get()))
 
     def list_qemu(self, *, node: str) -> list[dict[str, Any]]:
-        return list(self.proxmox.nodes(node).qemu.get())
+        return self._safe("list_qemu", lambda: list(self.proxmox.nodes(node).qemu.get()))
 
     def next_vmid(self) -> int:
-        vmid = self.proxmox.cluster.nextid.get()
-        return int(vmid)
+        return int(self._safe("next_vmid", lambda: self.proxmox.cluster.nextid.get()))
 
     def clone_vm(self, *, node: str, template_vmid: int, new_vmid: int, name: str, storage: str | None) -> str | None:
         payload: dict[str, Any] = {
@@ -197,35 +226,48 @@ class ProxmoxerAdapter:
         }
         if storage:
             payload["storage"] = storage
-        res = self.proxmox.nodes(node).qemu(template_vmid).clone.post(**payload)
-        return res
+        return self._safe("clone_vm", lambda: self.proxmox.nodes(node).qemu(template_vmid).clone.post(**payload))
 
     def config_vm(self, *, node: str, vmid: int, config: dict[str, Any]) -> None:
-        self.proxmox.nodes(node).qemu(vmid).config.post(**config)
+        self._safe("config_vm", lambda: self.proxmox.nodes(node).qemu(vmid).config.post(**config))
 
     def start_vm(self, *, node: str, vmid: int) -> None:
-        self.proxmox.nodes(node).qemu(vmid).status.start.post()
+        self._safe("start_vm", lambda: self.proxmox.nodes(node).qemu(vmid).status.start.post())
 
     def stop_vm(self, *, node: str, vmid: int) -> None:
-        self.proxmox.nodes(node).qemu(vmid).status.stop.post()
+        self._safe("stop_vm", lambda: self.proxmox.nodes(node).qemu(vmid).status.stop.post())
 
     def reboot_vm(self, *, node: str, vmid: int) -> None:
-        self.proxmox.nodes(node).qemu(vmid).status.reboot.post()
+        self._safe("reboot_vm", lambda: self.proxmox.nodes(node).qemu(vmid).status.reboot.post())
 
     def current_status(self, *, node: str, vmid: int) -> dict[str, Any]:
-        return dict(self.proxmox.nodes(node).qemu(vmid).status.current.get())
+        return self._safe("current_status", lambda: dict(self.proxmox.nodes(node).qemu(vmid).status.current.get()))
 
     def delete_vm(self, *, node: str, vmid: int) -> None:
-        self.proxmox.nodes(node).qemu(vmid).delete()
+        self._safe("delete_vm", lambda: self.proxmox.nodes(node).qemu(vmid).delete())
 
     def migrate_vm(self, *, node: str, vmid: int, target_node: str) -> None:
-        self.proxmox.nodes(node).qemu(vmid).migrate.post(target=target_node, online=1)
+        self._safe("migrate_vm", lambda: self.proxmox.nodes(node).qemu(vmid).migrate.post(target=target_node, online=1))
 
     def create_vnc_proxy(self, *, node: str, vmid: int) -> dict[str, Any]:
         """Create a VNC proxy for web console access.
         Returns: {"ticket": str, "port": int, "upid": str}
         """
-        return dict(self.proxmox.nodes(node).qemu(vmid).vncproxy.post(websocket="1"))
+        return self._safe("create_vnc_proxy", lambda: dict(self.proxmox.nodes(node).qemu(vmid).vncproxy.post(websocket="1")))
+
+    def wait_for_task(self, *, node: str, upid: str, timeout_seconds: int) -> dict[str, Any]:
+        deadline = time.monotonic() + max(1, int(timeout_seconds))
+        last: dict[str, Any] | None = None
+        while time.monotonic() < deadline:
+            status = self._safe("task_status", lambda: dict(self.proxmox.nodes(node).tasks(upid).status.get()))
+            last = status
+            if status.get("status") == "stopped":
+                exitstatus = status.get("exitstatus")
+                if exitstatus and str(exitstatus).upper() != "OK":
+                    raise ProxmoxError("Task do Proxmox falhou", details={"upid": upid, "node": node, "status": status})
+                return status
+            time.sleep(1)
+        raise ProxmoxError("Timeout aguardando task do Proxmox", details={"upid": upid, "node": node, "last_status": last or {}})
 
 
 class HttpMockAdapter:
@@ -299,3 +341,6 @@ class HttpMockAdapter:
         Returns: {"ticket": str, "port": int, "upid": str}
         """
         return self._post(f"/api2/json/nodes/{node}/qemu/{vmid}/vncproxy", data={"websocket": "1"})
+
+    def wait_for_task(self, *, node: str, upid: str, timeout_seconds: int) -> dict[str, Any]:
+        return {"node": node, "upid": upid, "status": "stopped", "exitstatus": "OK"}
