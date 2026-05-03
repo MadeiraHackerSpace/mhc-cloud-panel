@@ -24,7 +24,7 @@ async function getVM(id: string, token: string) {
 export default async function ConsolePage({ params }: PageProps) {
   const { id } = await params;
   const cookieStore = await cookies();
-  const token = cookieStore.get('access_token')?.value;
+  const token = cookieStore.get("mhc_access_token")?.value;
 
   if (!token) {
     redirect('/login');
