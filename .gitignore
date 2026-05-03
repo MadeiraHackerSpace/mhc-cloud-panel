@@ -2,6 +2,10 @@
 .env.*
 !.env.example
 
+.trae/*
+!.trae/rules/
+!.trae/rules/**
+
 backend/.venv
 backend/**/__pycache__/
 backend/**/*.pyc
