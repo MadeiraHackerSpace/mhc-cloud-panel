@@ -8,7 +8,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import UnauthorizedError
-from app.core.security import create_access_token, create_refresh_token, decode_token, verify_password
+from app.core.security import (
+    create_access_token,
+    create_mfa_pending_token,
+    create_refresh_token,
+    decode_token,
+    verify_password,
+)
 from app.models.refresh_token import RefreshToken
 from app.models.role import Role
 from app.models.user import User
@@ -22,17 +28,76 @@ class AuthService:
     def __init__(self, db: Session):
         self.db = db
 
-    def login(self, *, email: str, password: str) -> tuple[str, str]:
+    def login(self, *, email: str, password: str) -> tuple[str, str] | dict:
+        """Authenticate user. Returns token pair or MFA pending dict."""
         user = self.db.scalar(select(User).where(User.email == email))
         if not user or not user.is_active or user.deleted_at is not None:
             raise UnauthorizedError("Credenciais inválidas")
         if not verify_password(password, user.password_hash):
             raise UnauthorizedError("Credenciais inválidas")
 
+        # If MFA is enabled, return a short-lived mfa_pending token
+        if user.totp_enabled and user.totp_secret:
+            mfa_token = create_mfa_pending_token(subject=str(user.id))
+            return {"mfa_required": True, "mfa_token": mfa_token}
+
         role = self.db.scalar(select(Role).where(Role.id == user.role_id))
         role_name = role.name.value if role else "cliente"
 
-        access = create_access_token(subject=str(user.id), tenant_id=str(user.tenant_id) if user.tenant_id else None, role=role_name)
+        access = create_access_token(
+            subject=str(user.id),
+            tenant_id=str(user.tenant_id) if user.tenant_id else None,
+            role=role_name,
+        )
+        refresh, jti, exp = create_refresh_token(
+            subject=str(user.id),
+            tenant_id=str(user.tenant_id) if user.tenant_id else None,
+            role=role_name,
+        )
+        self.db.add(RefreshToken(user_id=user.id, jti=jti, token_hash=hash_token(refresh), expires_at=exp))
+        self.db.commit()
+        return access, refresh
+
+    def totp_login(self, *, mfa_token: str, code: str) -> tuple[str, str]:
+        """Complete MFA login with TOTP code. Returns access + refresh token pair."""
+        try:
+            payload = decode_token(mfa_token)
+        except Exception as exc:
+            raise UnauthorizedError("Token MFA inválido") from exc
+
+        if payload.get("type") != "mfa_pending":
+            raise UnauthorizedError("Token MFA inválido")
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise UnauthorizedError("Token MFA inválido")
+
+        try:
+            parsed_user_id = uuid.UUID(str(user_id))
+        except ValueError as exc:
+            raise UnauthorizedError("Token MFA inválido") from exc
+
+        user = self.db.scalar(select(User).where(User.id == parsed_user_id))
+        if not user or not user.is_active or user.deleted_at is not None:
+            raise UnauthorizedError("Usuário inválido")
+
+        if not user.totp_enabled or not user.totp_secret:
+            raise UnauthorizedError("MFA não está habilitado para este usuário")
+
+        import pyotp
+
+        totp = pyotp.TOTP(user.totp_secret)
+        if not totp.verify(code, valid_window=1):
+            raise UnauthorizedError("Código TOTP inválido")
+
+        role = self.db.scalar(select(Role).where(Role.id == user.role_id))
+        role_name = role.name.value if role else "cliente"
+
+        access = create_access_token(
+            subject=str(user.id),
+            tenant_id=str(user.tenant_id) if user.tenant_id else None,
+            role=role_name,
+        )
         refresh, jti, exp = create_refresh_token(
             subject=str(user.id),
             tenant_id=str(user.tenant_id) if user.tenant_id else None,
@@ -70,7 +135,11 @@ class AuthService:
         role_name = role.name.value if role else "cliente"
 
         token_row.revoked_at = datetime.now(UTC)
-        access = create_access_token(subject=str(user.id), tenant_id=str(user.tenant_id) if user.tenant_id else None, role=role_name)
+        access = create_access_token(
+            subject=str(user.id),
+            tenant_id=str(user.tenant_id) if user.tenant_id else None,
+            role=role_name,
+        )
         new_refresh, new_jti, exp = create_refresh_token(
             subject=str(user.id),
             tenant_id=str(user.tenant_id) if user.tenant_id else None,

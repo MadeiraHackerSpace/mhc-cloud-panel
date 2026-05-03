@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Query, Request, WebSocket
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_proxmox_service
 from app.core.database import get_db, get_sessionmaker
 from app.core.errors import ForbiddenError, NotFoundError, UnauthorizedError
 from app.core.security import TokenPayloadError, decode_token
@@ -351,7 +351,11 @@ def cancel_service(
     payload: VMActionRequest,
     current: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    proxmox=Depends(get_proxmox_service),
 ) -> dict:
+    import structlog
+    log = structlog.get_logger()
+
     if not payload.confirm:
         raise ForbiddenError("Confirmação necessária para cancelar")
     vm = _get_vm_scoped(db, vm_id=vm_id, current=current)
@@ -360,9 +364,46 @@ def cancel_service(
         raise NotFoundError("Serviço não encontrado")
     if current.tenant_id is not None and service.tenant_id != current.tenant_id:
         raise ForbiddenError("Sem acesso a este serviço")
+
+    # Attempt to stop and delete the VM in Proxmox
+    proxmox_error: str | None = None
+    if vm.status != VMStatus.deleted:
+        try:
+            # Try to stop first (ignore error if already stopped)
+            try:
+                proxmox.stop_vm(node=vm.proxmox_node, vmid=vm.proxmox_vmid)
+            except Exception:
+                pass  # VM may already be stopped — proceed to delete
+            proxmox.delete_vm(node=vm.proxmox_node, vmid=vm.proxmox_vmid)
+            vm.status = VMStatus.deleted
+            vm.last_synced_at = datetime.now(UTC)
+        except Exception as exc:
+            proxmox_error = str(exc)
+            log.error(
+                "cancel_service.proxmox_delete_failed",
+                vm_id=str(vm.id),
+                proxmox_node=vm.proxmox_node,
+                proxmox_vmid=vm.proxmox_vmid,
+                error=proxmox_error,
+            )
+
+    # Always cancel the service in DB, regardless of Proxmox result
     service.status = ServiceStatus.cancelled
     service.cancelled_at = datetime.now(UTC)
+
+    db.add(
+        ServiceAction(
+            tenant_id=vm.tenant_id,
+            service_id=vm.service_id,
+            virtual_machine_id=vm.id,
+            requested_by_user_id=current.id,
+            action=ServiceActionType.cancel,
+            success=proxmox_error is None,
+            details={"proxmox_deleted": proxmox_error is None, "proxmox_error": proxmox_error} if proxmox_error else {"proxmox_deleted": True},
+        )
+    )
     db.commit()
+
     AuditService(db).log(
         action="service.cancel",
         entity="services",
@@ -370,6 +411,7 @@ def cancel_service(
         actor=current,
         tenant_id=current.tenant_id,
         request=request,
+        metadata={"proxmox_deleted": proxmox_error is None, "proxmox_error": proxmox_error},
     )
     return {"ok": True, "status": service.status}
 

@@ -60,6 +60,20 @@ def create_refresh_token(*, subject: str, tenant_id: str | None, role: str, jti:
     return token, refresh_jti, expire
 
 
+def create_mfa_pending_token(*, subject: str) -> str:
+    """Create a short-lived token for the MFA second step (5 minutes TTL)."""
+    settings = get_settings()
+    expire = _now() + timedelta(minutes=5)
+    payload: dict[str, Any] = {
+        "iss": settings.jwt_issuer,
+        "sub": subject,
+        "type": "mfa_pending",
+        "exp": expire,
+        "iat": _now(),
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
 class TokenPayloadError(Exception):
     pass
 

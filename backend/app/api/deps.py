@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import uuid
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -72,3 +72,20 @@ def require_roles(*allowed: str) -> Callable[[User], User]:
 
 def tenant_filter_clause(user: User) -> tuple[bool, str | None]:
     return user.tenant_id is None, str(user.tenant_id) if user.tenant_id else None
+
+
+def get_proxmox_service() -> ProxmoxService:
+    """FastAPI dependency that provides a ProxmoxService instance."""
+    from app.integrations.proxmox.service import ProxmoxService as _ProxmoxService
+
+    return _ProxmoxService.from_settings()
+
+
+if TYPE_CHECKING:
+    from app.integrations.proxmox.service import ProxmoxService as _ProxmoxServiceType
+
+    ProxmoxDep = Annotated[_ProxmoxServiceType, Depends(get_proxmox_service)]
+else:
+    from typing import Any
+
+    ProxmoxDep = Annotated[Any, Depends(get_proxmox_service)]
