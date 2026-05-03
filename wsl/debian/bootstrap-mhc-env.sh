@@ -70,10 +70,10 @@ else
 fi
 
 echo "[5/7] Instalando dependencias Node do frontend..."
-if [[ -f "${project_root}/frontend/package-lock.json" ]]; then
-  run_as_target_user "set -euo pipefail; cd '${project_root}/frontend'; npm ci"
+if [[ -f "${project_root}/frontend/bun.lock" ]]; then
+  run_as_target_user "set -euo pipefail; cd '${project_root}/frontend'; bun install --frozen-lockfile"
 else
-  echo "Arquivo frontend/package-lock.json nao encontrado; pulando etapa."
+  echo "Arquivo frontend/bun.lock nao encontrado; pulando etapa."
 fi
 
 echo "[6/7] Validando ferramentas instaladas..."

@@ -4,6 +4,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -16,12 +19,17 @@ def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging()
 
+    limiter = Limiter(key_func=get_remote_address)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
+        settings.validate_for_production()
         seed_if_enabled()
         yield
 
     app = FastAPI(title="MHC Cloud Panel", version="0.1.0", lifespan=lifespan)
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 
     app.add_middleware(

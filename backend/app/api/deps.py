@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.errors import ForbiddenError, UnauthorizedError
 from app.core.security import TokenPayloadError, decode_token
-from app.models.role import Role
 from app.models.user import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -53,9 +52,17 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 def require_roles(*allowed: str) -> Callable[[User], User]:
-    def _dep(user: CurrentUser, db: Annotated[Session, Depends(get_db)]) -> User:
-        role = db.scalar(select(Role).where(Role.id == user.role_id))
-        role_name = role.name.value if role else None
+    def _dep(
+        user: CurrentUser,
+        creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    ) -> User:
+        if not creds:
+            raise ForbiddenError("Sem permissão")
+        try:
+            payload = decode_token(creds.credentials)
+        except TokenPayloadError:
+            raise ForbiddenError("Sem permissão")
+        role_name = payload.get("role")
         if role_name not in allowed:
             raise ForbiddenError("Sem permissão")
         return user

@@ -22,7 +22,7 @@ Por favor, descreva os testes realizados localmente. Note que as automações do
 
 ## Checklist para Revisão:
 
-- [ ] Meu código segue o estilo do projeto (`npm run lint` / `flake8` / `black`).
+- [ ] Meu código segue o estilo do projeto (`bun run lint` / `flake8` / `black`).
 - [ ] Realizei uma revisão do meu próprio código (self-review).
 - [ ] Comentei meu código em áreas difíceis de entender.
 - [ ] Adicionei ou atualizei a documentação correspondente (`docs/BACKEND.md`, etc.).

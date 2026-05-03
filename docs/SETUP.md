@@ -203,8 +203,8 @@ Em outro terminal:
 
 ```bash
 cd frontend
-npm ci
-npm run dev
+bun install
+bun run dev
 ```
 
 Frontend: http://localhost:3000

@@ -42,7 +42,7 @@ class VNCProxyOut(APIModel):
 
 **1. Instalar noVNC**
 ```bash
-npm install @novnc/novnc
+bun add @novnc/novnc
 ```
 
 **2. Criar componente `VNCConsole.tsx`**

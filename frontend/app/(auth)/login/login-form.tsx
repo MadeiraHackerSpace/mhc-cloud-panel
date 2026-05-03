@@ -70,9 +70,11 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </button>
       </form>
 
-      <div className="mt-6 text-xs text-muted">
-        Demo: superadmin@mhc.local / admin12345 • cliente@mhc.local / admin12345
-      </div>
+      {process.env.NEXT_PUBLIC_APP_ENV === "local" && (
+        <div className="mt-6 text-xs text-muted">
+          Demo: superadmin@mhc.local / admin12345 • cliente@mhc.local / admin12345
+        </div>
+      )}
     </div>
   );
 }

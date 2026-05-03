@@ -8,7 +8,7 @@
 
 ---
 
-### TASK-001 - Validar JWT_SECRET e SEED_ON_STARTUP no startup
+- [ ] TASK-001 - Validar JWT_SECRET e SEED_ON_STARTUP no startup
 
 **Quick win | Lacuna critica**
 
@@ -44,7 +44,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-002 - Garantir HttpOnly e Secure no cookie de autenticacao
+- [ ] TASK-002 - Garantir HttpOnly e Secure no cookie de autenticacao
 
 **Quick win**
 
@@ -79,7 +79,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-003 - Remover credenciais demo da tela de login em producao
+- [ ] TASK-003 - Remover credenciais demo da tela de login em producao
 
 **Quick win**
 
@@ -112,7 +112,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-004 - Rate limiting no endpoint de login
+- [ ] TASK-004 - Rate limiting no endpoint de login
 
 **Quick win**
 
@@ -147,7 +147,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-005 - Corrigir autenticacao no WebSocket VNC (auth antes de accept)
+- [ ] TASK-005 - Corrigir autenticacao no WebSocket VNC (auth antes de accept)
 
 **Lacuna critica de seguranca**
 
@@ -184,7 +184,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-006 - Ler role do JWT em require_roles (eliminar query extra ao banco)
+- [ ] TASK-006 - Ler role do JWT em require_roles (eliminar query extra ao banco)
 
 **Quick win**
 
@@ -222,7 +222,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-007 - Criar TenantScopedRepository base
+- [ ] TASK-007 - Criar TenantScopedRepository base
 
 **Lacuna critica de arquitetura**
 
@@ -258,7 +258,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-008 - Implementar ServiceRepository e VMRepository
+- [ ] TASK-008 - Implementar ServiceRepository e VMRepository
 
 **Pode rodar em paralelo com TASK-009**
 
@@ -292,7 +292,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-009 - Implementar InvoiceRepository e TicketRepository
+- [ ] TASK-009 - Implementar InvoiceRepository e TicketRepository
 
 **Pode rodar em paralelo com TASK-008**
 
@@ -324,7 +324,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-010 - Extrair ContractService de services.py
+- [ ] TASK-010 - Extrair ContractService de services.py
 
 **Exige revisao humana antes do merge**
 
@@ -362,7 +362,7 @@ Pode ser executada por agente sem revisao humana? nao
 
 ---
 
-### TASK-011 - Testes de isolamento de tenant (IDOR prevention)
+- [ ] TASK-011 - Testes de isolamento de tenant (IDOR prevention)
 
 **Lacuna critica de seguranca**
 
@@ -399,7 +399,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-012 - Corrigir cancel_service para deletar VM no Proxmox
+- [ ] TASK-012 - Corrigir cancel_service para deletar VM no Proxmox
 
 **Lacuna critica de funcionalidade**
 
@@ -437,7 +437,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-013 - Implementar MFA/TOTP (ativacao, verificacao, desativacao)
+- [ ] TASK-013 - Implementar MFA/TOTP (ativacao, verificacao, desativacao)
 
 **Lacuna critica | Exige revisao humana antes do merge**
 
@@ -483,7 +483,7 @@ Pode ser executada por agente sem revisao humana? nao
 
 ---
 
-### TASK-014 - Dashboard do cliente com KPIs reais
+- [ ] TASK-014 - Dashboard do cliente com KPIs reais
 
 **Pode rodar em paralelo com TASK-015**
 
@@ -520,7 +520,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-015 - Feedback de acoes de VM sem location.reload()
+- [ ] TASK-015 - Feedback de acoes de VM sem location.reload()
 
 **Pode rodar em paralelo com TASK-014**
 
@@ -558,7 +558,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-016 - Ocultar link Admin para usuarios sem permissao
+- [ ] TASK-016 - Ocultar link Admin para usuarios sem permissao
 
 **Quick win**
 
@@ -593,7 +593,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-017 - Estados vazios com CTAs acionaveis
+- [ ] TASK-017 - Estados vazios com CTAs acionaveis
 
 **Quick win**
 
@@ -630,7 +630,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-018 - Pagina de infraestrutura com capacidade do cluster
+- [ ] TASK-018 - Pagina de infraestrutura com capacidade do cluster
 
 **Pode rodar em paralelo com outras tasks de Fase 2**
 
@@ -667,7 +667,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-019 - Testes de billing (suspensao e reativacao)
+- [ ] TASK-019 - Testes de billing (suspensao e reativacao)
 
 **Pode rodar em paralelo com TASK-020**
 
@@ -701,7 +701,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-020 - Testes de cancelamento de servico/VM
+- [ ] TASK-020 - Testes de cancelamento de servico/VM
 
 **Pode rodar em paralelo com TASK-019**
 
@@ -732,7 +732,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-021 - Corrigir CI para usar bun em vez de npm
+- [ ] TASK-021 - Corrigir CI para usar bun em vez de npm
 
 **Quick win**
 
@@ -770,7 +770,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-022 - Remover paramiko de requirements.txt
+- [ ] TASK-022 - Remover paramiko de requirements.txt
 
 **Quick win**
 
@@ -802,7 +802,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-023 - Remover tsconfig.tsbuildinfo do git
+- [ ] TASK-023 - Remover tsconfig.tsbuildinfo do git
 
 **Quick win**
 
@@ -834,7 +834,7 @@ Pode ser executada por agente sem revisao humana? sim
 
 ---
 
-### TASK-024 - Substituir dados demo inline em backend.ts
+- [ ] TASK-024 - Substituir dados demo inline em backend.ts
 
 **Exige revisao humana antes do merge**
 
@@ -867,7 +867,7 @@ Pode ser executada por agente sem revisao humana? nao
 
 ---
 
-### TASK-025 - Documentar variaveis de ambiente obrigatorias
+- [ ] TASK-025 - Documentar variaveis de ambiente obrigatorias
 
 **Quick win**
 
@@ -914,4 +914,5 @@ Pode ser executada por agente sem revisao humana? sim
 - TASK-010 - ContractService (refactor de logica critica de negocio)
 - TASK-013 - MFA/TOTP (mudanca de fluxo de autenticacao)
 - TASK-024 - Remocao de dados demo (decisao de produto sobre modo demo)
+
 

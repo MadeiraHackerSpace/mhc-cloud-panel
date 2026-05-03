@@ -428,7 +428,7 @@ Justificativa: o Dockerfile e o ambiente de desenvolvimento já usam bun. O CI d
 - Testes de billing (suspensão, reativação) (INIT-008)
 - Testes de cancelamento de VM (INIT-008)
 - Remoção de `paramiko` de `requirements.txt` (INIT-009)
-- Padronização npm vs bun (INIT-009)
+- Padronização CI para bun (INIT-009)
 - Remoção de `tsconfig.tsbuildinfo` do git (INIT-009)
 - Substituição dos dados demo inline em `backend.ts` por fixtures ou remoção
 - Documentação de variáveis de ambiente obrigatórias no README
@@ -454,9 +454,9 @@ Justificativa: o Dockerfile e o ambiente de desenvolvimento já usam bun. O CI d
 
 ### Fase 2
 - **Tipos:**
-  - Typecheck TypeScript (`npm run typecheck`) deve passar
-  - Lint (`npm run lint`) deve passar
-  - Build de produção (`npm run build`) deve passar
+  - Typecheck TypeScript (`bun run typecheck`) deve passar
+  - Lint (`bun run lint`) deve passar
+  - Build de produção (`bun run build`) deve passar
   - Revisão manual de UX (não automatizável)
 - **Critério de merge:** Build limpo, sem erros de tipo, sem `window.location.reload()` em ações de VM.
 

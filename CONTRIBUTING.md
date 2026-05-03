@@ -44,9 +44,9 @@ docker compose exec backend pytest
 Frontend:
 
 ```bash
-docker compose exec frontend npm run lint
-docker compose exec frontend npm run typecheck
-docker compose exec frontend npm run build
+docker compose exec frontend bun run lint
+docker compose exec frontend bun run typecheck
+docker compose exec frontend bun run build
 ```
 
 ## Padrões de código

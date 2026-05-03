@@ -402,17 +402,36 @@ async def vnc_websocket_proxy(
     port: int,
     vncticket: str,
 ):
+    import websockets as ws_lib
+
+    # 1. Validate parameters BEFORE accept
+    if not (5900 <= port <= 5999):
+        await websocket.close(code=1008)
+        return
+    if not vncticket or len(vncticket) > 512:
+        await websocket.close(code=1008)
+        return
+
+    # 2. Authenticate BEFORE accept
+    db = get_sessionmaker()()
+    try:
+        current = _get_current_user_ws(websocket, db=db)
+        vm = _get_vm_scoped(db, vm_id=vm_id, current=current)
+    except (UnauthorizedError, ForbiddenError, NotFoundError):
+        await websocket.close(code=1008)
+        db.close()
+        return
+
+    # 3. Only accept after successful auth
     requested = websocket.headers.get("sec-websocket-protocol") or ""
     requested_protocols = {p.strip().lower() for p in requested.split(",") if p.strip()}
     if "binary" in requested_protocols:
         await websocket.accept(subprotocol="binary")
     else:
         await websocket.accept()
-    db = get_sessionmaker()()
-    try:
-        current = _get_current_user_ws(websocket, db=db)
-        vm = _get_vm_scoped(db, vm_id=vm_id, current=current)
 
+    # 4. Continue with the proxy logic
+    try:
         settings = ProxmoxService.from_settings().settings
         if not settings.proxmox_host:
             await websocket.close(code=1011)
@@ -437,9 +456,7 @@ async def vnc_websocket_proxy(
                 ssl_ctx.check_hostname = False
                 ssl_ctx.verify_mode = ssl.CERT_NONE
 
-        import websockets
-
-        async with websockets.connect(
+        async with ws_lib.connect(
             ws_url,
             extra_headers={"Authorization": auth},
             ssl=ssl_ctx,

@@ -51,6 +51,28 @@ class Settings(BaseSettings):
     # Whether the rebalancer actually migrates VMs (False = dry-run mode)
     rebalance_enabled: bool = False
 
+    def validate_for_production(self) -> None:
+        """Validate that unsafe defaults are not used outside local/test environments."""
+        import structlog
+        log = structlog.get_logger()
+        if self.app_env not in ("local", "test"):
+            if self.jwt_secret == "change-me":
+                raise RuntimeError(
+                    "JWT_SECRET must be changed before running outside local environment. "
+                    "Set a strong random value (e.g. openssl rand -hex 32) in your .env file."
+                )
+            if self.seed_on_startup:
+                raise RuntimeError(
+                    "SEED_ON_STARTUP=true is not allowed outside local environment. "
+                    "This would create users with default passwords (admin12345). "
+                    "Set SEED_ON_STARTUP=false in your .env file."
+                )
+        if self.app_env == "production" and not self.proxmox_verify_ssl:
+            log.warning(
+                "proxmox_ssl_verification_disabled",
+                message="PROXMOX_VERIFY_SSL=false is insecure in production. Set PROXMOX_VERIFY_SSL=true.",
+            )
+
     @property
     def database_url(self) -> str:
         if self.database_url_override:

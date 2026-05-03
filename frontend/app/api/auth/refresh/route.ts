@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST() {
   const jar = cookies();
-  const secure = process.env.COOKIE_SECURE === "true";
+  const secure = process.env.COOKIE_SECURE !== "false";
   if (jar.get("mhc_demo")?.value === "1") {
     return NextResponse.json({ ok: true });
   }
@@ -38,13 +38,15 @@ export async function POST() {
     httpOnly: true,
     sameSite: "lax",
     secure,
-    path: "/"
+    path: "/",
+    maxAge: 60 * 15 // 15 minutes, aligned with JWT_ACCESS_TOKEN_EXPIRES_MINUTES
   });
   jar.set("mhc_refresh_token", data.refresh_token, {
     httpOnly: true,
     sameSite: "lax",
     secure,
-    path: "/"
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30 // 30 days, aligned with JWT_REFRESH_TOKEN_EXPIRES_DAYS
   });
 
   return NextResponse.json({ ok: true });

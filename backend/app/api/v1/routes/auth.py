@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,9 +15,11 @@ from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/login", response_model=TokenPair)
+@limiter.limit("10/minute")
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenPair:
     auth = AuthService(db)
     access, refresh = auth.login(email=payload.email, password=payload.password)
