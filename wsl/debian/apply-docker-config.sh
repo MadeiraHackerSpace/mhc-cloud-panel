@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
+set -o pipefail
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "Execute como root (ex.: sudo bash $0)"
