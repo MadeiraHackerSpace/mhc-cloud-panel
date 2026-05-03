@@ -37,9 +37,11 @@ export default async function ConsolePage({ params }: PageProps) {
   }
 
   const proxmoxHost = process.env.PROXMOX_HOST || process.env.NEXT_PUBLIC_PROXMOX_HOST || 'localhost';
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  const ts = Date.now();
   
   // Redirect to static VNC page with query params
-  const vncUrl = `/vnc.html?vmId=${id}&vmName=${encodeURIComponent(vm.name)}&vmNode=${vm.proxmox_node}&vmVmid=${vm.proxmox_vmid}&proxmoxHost=${encodeURIComponent(proxmoxHost)}`;
+  const vncUrl = `/vnc.html?ts=${ts}&apiBase=${encodeURIComponent(apiBase)}&vmId=${id}&vmName=${encodeURIComponent(vm.name)}&vmNode=${vm.proxmox_node}&vmVmid=${vm.proxmox_vmid}&proxmoxHost=${encodeURIComponent(proxmoxHost)}`;
   
   redirect(vncUrl);
 }

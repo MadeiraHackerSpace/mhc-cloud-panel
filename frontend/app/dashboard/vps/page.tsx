@@ -3,7 +3,7 @@ import { backendFetch } from "@/lib/api/backend";
 import type { Page, VM } from "@/lib/types/api";
 
 export default async function VPSListPage() {
-  const data = await backendFetch<Page<VM>>("/api/v1/vms?limit=50&offset=0");
+  const data = await backendFetch<Page<VM>>("/api/v1/vms?limit=50&offset=0&refresh=true");
 
   return (
     <section className="rounded-xl border border-border bg-panel p-6">
@@ -47,4 +47,3 @@ export default async function VPSListPage() {
     </section>
   );
 }
-

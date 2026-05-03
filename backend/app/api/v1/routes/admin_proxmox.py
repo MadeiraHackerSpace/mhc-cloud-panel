@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,10 +10,13 @@ from app.api.deps import require_roles
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.integrations.proxmox.service import ProxmoxService
+from app.models.enums import ServiceStatus, VMStatus
 from app.models.proxmox_node import ProxmoxNode
 from app.models.proxmox_storage import ProxmoxStorage
 from app.models.proxmox_template import ProxmoxTemplate
+from app.models.service import Service
 from app.models.user import User
+from app.models.virtual_machine import VirtualMachine
 from app.schemas.proxmox import (
     BestNodeOut,
     ClusterCapacityOut,
@@ -193,4 +198,123 @@ def set_maintenance(
         "is_maintenance": node_record.is_maintenance,
         "drain_task_id": task_id,
     }
+
+
+@router.post("/cleanup-test-vms")
+def cleanup_test_vms(
+    request: Request,
+    prefix: str = "portal-",
+    dry_run: bool = False,
+    current: User = Depends(require_roles("super_admin", "operador")),
+    db: Session = Depends(get_db),
+) -> dict:
+    proxmox = ProxmoxService.from_settings()
+
+    deleted: list[dict] = []
+    errors: list[dict] = []
+
+    vms = db.scalars(
+        select(VirtualMachine).where(
+            VirtualMachine.status != VMStatus.deleted,
+            VirtualMachine.name.like(f"{prefix}%"),
+        )
+    ).all()
+
+    seen: set[tuple[str, int]] = set()
+    for vm in vms:
+        key = (vm.proxmox_node, int(vm.proxmox_vmid))
+        if key in seen:
+            continue
+        seen.add(key)
+        if dry_run:
+            deleted.append(
+                {
+                    "source": "db",
+                    "vm_id": str(vm.id),
+                    "name": vm.name,
+                    "node": vm.proxmox_node,
+                    "vmid": vm.proxmox_vmid,
+                }
+            )
+            continue
+        try:
+            proxmox.delete_vm(node=vm.proxmox_node, vmid=vm.proxmox_vmid)
+            vm.status = VMStatus.deleted
+            vm.last_synced_at = datetime.now(UTC)
+            svc = db.scalar(select(Service).where(Service.id == vm.service_id))
+            if svc:
+                svc.status = ServiceStatus.cancelled
+                svc.cancelled_at = svc.cancelled_at or datetime.now(UTC)
+            deleted.append(
+                {
+                    "source": "db",
+                    "vm_id": str(vm.id),
+                    "name": vm.name,
+                    "node": vm.proxmox_node,
+                    "vmid": vm.proxmox_vmid,
+                }
+            )
+        except Exception as exc:
+            errors.append(
+                {
+                    "source": "db",
+                    "vm_id": str(vm.id),
+                    "name": vm.name,
+                    "node": vm.proxmox_node,
+                    "vmid": vm.proxmox_vmid,
+                    "error": str(exc),
+                }
+            )
+
+    try:
+        nodes = proxmox.list_nodes()
+    except Exception as exc:
+        nodes = []
+        errors.append({"source": "proxmox", "error": f"Falha ao listar nodes: {exc}"})
+
+    for n in nodes:
+        node_name = n.get("node")
+        if not node_name:
+            continue
+        try:
+            qemus = proxmox.adapter.list_qemu(node=node_name)
+        except Exception as exc:
+            errors.append({"source": "proxmox", "node": node_name, "error": f"Falha ao listar qemu: {exc}"})
+            continue
+
+        for item in qemus:
+            try:
+                name = str(item.get("name") or "")
+                if not name.startswith(prefix):
+                    continue
+                if int(item.get("template") or 0) == 1:
+                    continue
+                vmid = int(item.get("vmid"))
+                key = (node_name, vmid)
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                if dry_run:
+                    deleted.append({"source": "proxmox", "name": name, "node": node_name, "vmid": vmid})
+                    continue
+
+                proxmox.delete_vm(node=node_name, vmid=vmid)
+                deleted.append({"source": "proxmox", "name": name, "node": node_name, "vmid": vmid})
+            except Exception as exc:
+                errors.append({"source": "proxmox", "node": node_name, "item": item, "error": str(exc)})
+
+    if not dry_run:
+        db.commit()
+        AuditService(db).log(
+            action="proxmox.cleanup_test_vms",
+            entity="virtual_machines",
+            entity_id=prefix,
+            actor=current,
+            tenant_id=None,
+            request=request,
+            metadata={"prefix": prefix, "deleted": len(deleted), "errors": len(errors)},
+        )
+
+    return {"ok": len(errors) == 0, "prefix": prefix, "dry_run": dry_run, "deleted": deleted, "errors": errors}
 

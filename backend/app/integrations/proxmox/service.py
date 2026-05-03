@@ -26,6 +26,8 @@ class ProxmoxAdapter(Protocol):
 
     def list_qemu(self, *, node: str) -> list[dict[str, Any]]: ...
 
+    def get_qemu_config(self, *, node: str, vmid: int) -> dict[str, Any]: ...
+
     def next_vmid(self) -> int: ...
 
     def clone_vm(self, *, node: str, template_vmid: int, new_vmid: int, name: str, storage: str | None) -> str | None: ...
@@ -215,6 +217,9 @@ class ProxmoxerAdapter:
     def list_qemu(self, *, node: str) -> list[dict[str, Any]]:
         return self._safe("list_qemu", lambda: list(self.proxmox.nodes(node).qemu.get()))
 
+    def get_qemu_config(self, *, node: str, vmid: int) -> dict[str, Any]:
+        return self._safe("get_qemu_config", lambda: dict(self.proxmox.nodes(node).qemu(vmid).config.get()))
+
     def next_vmid(self) -> int:
         return int(self._safe("next_vmid", lambda: self.proxmox.cluster.nextid.get()))
 
@@ -302,6 +307,9 @@ class HttpMockAdapter:
 
     def list_qemu(self, *, node: str) -> list[dict[str, Any]]:
         return list(self._get(f"/api2/json/nodes/{node}/qemu") or [])
+
+    def get_qemu_config(self, *, node: str, vmid: int) -> dict[str, Any]:
+        return dict(self._get(f"/api2/json/nodes/{node}/qemu/{vmid}/config") or {})
 
     def next_vmid(self) -> int:
         return int(self._get("/api2/json/cluster/nextid"))

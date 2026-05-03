@@ -4,7 +4,7 @@ import type { Page, Service, VM } from "@/lib/types/api";
 
 export default async function DashboardPage() {
   const services = await backendFetch<Page<Service>>("/api/v1/services?limit=5&offset=0");
-  const vms = await backendFetch<Page<VM>>("/api/v1/vms?limit=5&offset=0");
+  const vms = await backendFetch<Page<VM>>("/api/v1/vms?limit=5&offset=0&refresh=true");
 
   return (
     <div className="space-y-6">
@@ -53,4 +53,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-

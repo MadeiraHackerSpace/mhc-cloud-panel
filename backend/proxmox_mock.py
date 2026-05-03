@@ -91,6 +91,14 @@ async def config_vm(node: str, vmid: str, request: Request):
         vms[vmid]["config"] = dict(form)
     return {"data": None}
 
+
+@app.get("/api2/json/nodes/{node}/qemu/{vmid}/config")
+def get_config_vm(node: str, vmid: str):
+    vm = vms.get(vmid)
+    if not vm:
+        return {"data": {}}
+    return {"data": vm.get("config", {})}
+
 @app.post("/api2/json/nodes/{node}/qemu/{vmid}/status/start")
 def start_vm(node: str, vmid: str):
     if vmid in vms:

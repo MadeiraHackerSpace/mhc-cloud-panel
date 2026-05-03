@@ -4,7 +4,7 @@ import type { VM } from "@/lib/types/api";
 import { VMActionButtons } from "@/components/vm-actions";
 
 export default async function VPSDetailPage({ params }: { params: { id: string } }) {
-  const vm = await backendFetch<VM>(`/api/v1/vms/${params.id}`);
+  const vm = await backendFetch<VM>(`/api/v1/vms/${params.id}?refresh=true`);
   const status = await backendFetch<{ ok: boolean; status: Record<string, unknown> }>(
     `/api/v1/vms/${params.id}/status`
   );

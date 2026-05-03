@@ -11,7 +11,18 @@ export function ContractPlan({ planId, planName }: { planId: string; planName: s
   async function contract() {
     setLoading(true);
     setError(null);
-    const name = `VPS ${planName}`;
+    const now = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const stamp = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
+    const safePlan =
+      planName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 24) || "plano";
+    const name = `portal-${safePlan}-${stamp}`;
     const res = await fetch("/api/services/contract", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -40,4 +51,3 @@ export function ContractPlan({ planId, planName }: { planId: string; planName: s
     </div>
   );
 }
-
