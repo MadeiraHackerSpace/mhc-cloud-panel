@@ -206,9 +206,20 @@
                 
                 const data = await response.json();
                 
-                const proxmoxHost = new URLSearchParams(window.location.search).get('proxmoxHost') || 'localhost';
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${proxmoxHost}:${data.port}/?vncticket=${encodeURIComponent(data.ticket)}`;
+                const proxmoxHostParam = params.get('proxmoxHost') || 'localhost';
+                const proxmoxBase =
+                    proxmoxHostParam.startsWith('http://') || proxmoxHostParam.startsWith('https://')
+                        ? proxmoxHostParam
+                        : `https://${proxmoxHostParam}:8006`;
+
+                const wsProto = proxmoxBase.startsWith('https://') ? 'wss://' : 'ws://';
+                const hostPort = proxmoxBase.replace(/^https?:\/\//, '');
+
+                if (!vmNode || !vmVmid) {
+                    throw new Error('VM não tem node/vmid para abrir o console');
+                }
+
+                const wsUrl = `${wsProto}${hostPort}/api2/json/nodes/${encodeURIComponent(vmNode)}/qemu/${encodeURIComponent(vmVmid)}/vncwebsocket?port=${encodeURIComponent(data.port)}&vncticket=${encodeURIComponent(data.ticket)}`;
                 
                 const rfb = new RFB(
                     document.getElementById('vnc-screen'),

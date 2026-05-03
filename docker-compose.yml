@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-mhc_cloud_panel}
       POSTGRES_USER: ${POSTGRES_USER:-mhc}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mhc}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,8 +15,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -30,6 +26,15 @@ services:
       context: ./backend
     env_file:
       - ./.env
+    environment:
+      - PROXMOX_HOST
+      - PROXMOX_USER
+      - PROXMOX_REALM
+      - PROXMOX_TOKEN_NAME
+      - PROXMOX_TOKEN_SECRET
+      - PROXMOX_VERIFY_SSL
+      - PROXMOX_TIMEOUT_SECONDS
+      - PROXMOX_RETRY_TOTAL
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -46,6 +51,15 @@ services:
       context: ./backend
     env_file:
       - ./.env
+    environment:
+      - PROXMOX_HOST
+      - PROXMOX_USER
+      - PROXMOX_REALM
+      - PROXMOX_TOKEN_NAME
+      - PROXMOX_TOKEN_SECRET
+      - PROXMOX_VERIFY_SSL
+      - PROXMOX_TIMEOUT_SECONDS
+      - PROXMOX_RETRY_TOTAL
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -62,6 +76,15 @@ services:
       context: ./backend
     env_file:
       - ./.env
+    environment:
+      - PROXMOX_HOST
+      - PROXMOX_USER
+      - PROXMOX_REALM
+      - PROXMOX_TOKEN_NAME
+      - PROXMOX_TOKEN_SECRET
+      - PROXMOX_VERIFY_SSL
+      - PROXMOX_TIMEOUT_SECONDS
+      - PROXMOX_RETRY_TOTAL
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -77,8 +100,6 @@ services:
   proxmox_mock:
     build:
       context: ./backend
-    ports:
-      - "8001:8001"
     command: ["uvicorn", "proxmox_mock:app", "--host", "0.0.0.0", "--port", "8001"]
 
   frontend:
@@ -86,6 +107,9 @@ services:
       context: ./frontend
     env_file:
       - ./.env
+    environment:
+      - PROXMOX_HOST
+      - NEXT_PUBLIC_PROXMOX_HOST
     depends_on:
       backend:
         condition: service_started
